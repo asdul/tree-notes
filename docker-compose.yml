@@ -1,7 +1,7 @@
 version: '3'
 services:
   tree-notes:
-    image: your-dockerhub-username/tree-notes:1.0.0
+    image: aabsb1010/tree-notes:1.0.2
     ports:
       - "3011:3011"
     volumes:

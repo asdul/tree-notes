@@ -48,6 +48,8 @@
             border-right: 1px solid var(--border-color);
             overflow-y: auto;
             box-shadow: var(--shadow-md);
+            position: relative;
+            padding-bottom: 2.5rem; /* Make space for version tag */
         }
 
         .note-content {
@@ -337,6 +339,22 @@
         .tree-item:hover .note-preview {
             display: none;
         }
+
+        .version-tag {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            text-align: left;  /* Changed from right to left */
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0.5rem;
+            font-family: monospace;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
     </style>
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
@@ -345,6 +363,7 @@
 <body>
     <div class="container">
         <div class="tree-view">
+            <div class="version-tag">v1.0.2</div>
             <button class="button add-group-btn">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
