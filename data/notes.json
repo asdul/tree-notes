@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1741181587891,
+    "type": "group",
+    "title": "New Group",
+    "color": "#0d47a1",
+    "notes": [],
+    "created": 1741181587891,
+    "lastModified": 1741181587891
+  },
+  {
+    "id": 1741181587891,
+    "type": "note",
+    "title": "zdvzd",
+    "content": "<p>dgvdrfgbsz</p>",
+    "groupId": null,
+    "created": 1741181587891,
+    "lastModified": 1741181962250
+  },
+  {
+    "id": 1741181672236,
+    "type": "note",
+    "title": "New Note",
+    "content": "<p><br></p>",
+    "groupId": null,
+    "created": 1741181672236,
+    "lastModified": 1741181961498
+  },
+  {
+    "id": 1741181766604,
+    "type": "note",
+    "title": "Note 1",
+    "content": "<p><br></p>",
+    "groupId": null,
+    "created": 1741181766604,
+    "lastModified": 1741181954761
+  },
+  {
+    "id": 1741181771149,
+    "type": "note",
+    "title": "Note 2",
+    "content": "<p><br></p>",
+    "groupId": null,
+    "created": 1741181771149,
+    "lastModified": 1741181904173
+  }
+]

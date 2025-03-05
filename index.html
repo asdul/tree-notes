@@ -4,18 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tree Note Taking App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-primary: #1a1a1a;
-            --bg-secondary: #2d2d2d;
-            --bg-tertiary: #363636;
+            --bg-secondary: #242424;
+            --bg-tertiary: #2d2d2d;
             --text-primary: #ffffff;
             --text-secondary: #b3b3b3;
-            --accent-blue: #3a7bd5;
-            --accent-green: #43a047;
-            --accent-red: #d32f2f;
-            --border-color: #404040;
-            --hover-color: #454545;
+            --accent-blue: #4f46e5;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --border-color: #333333;
+            --hover-color: #363636;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -27,9 +30,10 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--bg-primary);
             color: var(--text-primary);
+            line-height: 1.5;
         }
 
         .container {
@@ -40,27 +44,31 @@
         .tree-view {
             width: 300px;
             background-color: var(--bg-secondary);
-            padding: 20px;
+            padding: 1.5rem;
             border-right: 1px solid var(--border-color);
             overflow-y: auto;
+            box-shadow: var(--shadow-md);
         }
 
         .note-content {
             flex: 1;
-            padding: 20px;
+            padding: 2rem;
             background-color: var(--bg-primary);
         }
 
         .tree-item {
             cursor: pointer;
-            padding: 8px 12px;
-            margin: 4px 0;
-            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0.5rem;
             transition: all 0.2s ease;
+            font-size: 0.95rem;
+            width: 100%;
         }
 
         .tree-item:hover {
             background-color: var(--hover-color);
+            transform: translateX(2px);
         }
 
         .tree-item.active {
@@ -70,61 +78,49 @@
 
         .group {
             margin-left: 0px;
-            margin-bottom: 15px;
+            margin-bottom: 1.5rem;
         }
 
         .sub-note {
-            margin-left: 20px;
-            font-size: 0.95em;
+            margin-left: 1.5rem;
+            font-size: 0.9rem;
             opacity: 0.9;
         }
 
         #note-title {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            font-size: 18px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
             background-color: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 0.5rem;
             color: var(--text-primary);
-            transition: border-color 0.2s ease;
-        }
-
-        #note-text {
-            width: 100%;
-            height: calc(100vh - 150px);
-            padding: 15px;
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            resize: none;
+            transition: all 0.2s ease;
             font-family: inherit;
-            line-height: 1.6;
-            transition: border-color 0.2s ease;
-        }
-
-        #note-title:focus, #note-text:focus {
-            outline: none;
-            border-color: var(--accent-blue);
         }
 
         .button {
             width: 100%;
-            padding: 12px;
+            padding: 0.875rem;
             color: var(--text-primary);
             border: none;
             cursor: pointer;
-            margin-bottom: 12px;
-            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            border-radius: 0.5rem;
             font-weight: 500;
-            transition: transform 0.2s ease, filter 0.2s ease;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
         .button:hover {
             transform: translateY(-1px);
             filter: brightness(110%);
+            box-shadow: var(--shadow-sm);
         }
 
         .button:active {
@@ -143,89 +139,82 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 12px;
-            margin: 5px 0;
-            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0.5rem;
             transition: all 0.2s ease;
-        }
-
-        .group-header:hover {
-            filter: brightness(110%);
-        }
-
-        .add-sub-note {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            font-size: 1.2em;
-            padding: 0 5px;
-            color: var(--text-primary);
-            opacity: 0.7;
-            transition: opacity 0.2s ease;
-        }
-
-        .add-sub-note:hover {
-            opacity: 1;
-        }
-
-        .delete-btn {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            color: var(--accent-red);
-            font-size: 1.2em;
-            padding: 0 5px;
-            opacity: 0.7;
-            transition: all 0.2s ease;
-        }
-
-        .delete-btn:hover {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        .rename-btn {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            color: var(--text-primary);
-            font-size: 1.2em;
-            padding: 0 5px;
-            opacity: 0.7;
-            transition: all 0.2s ease;
-        }
-
-        .rename-btn:hover {
-            opacity: 1;
-            transform: scale(1.1);
+            font-weight: 500;
         }
 
         .group-header-buttons {
             display: flex;
-            gap: 8px;
+            gap: 0.5rem;
             align-items: center;
+        }
+
+        .icon-button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .delete-btn {
+            color: var(--accent-red);
+        }
+
+        .rename-btn {
+            color: var(--text-primary);
         }
 
         .note-header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-
-        .note-info {
-            display: flex;
             flex-direction: column;
-            gap: 4px;
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
         }
 
         .note-timestamp {
-            font-size: 0.8em;
-            opacity: 0.7;
+            font-size: 0.75rem;
             color: var(--text-secondary);
+            margin-top: 4px;
         }
 
-        /* Custom scrollbar */
+        /* Quill editor customization */
+        .ql-toolbar.ql-snow {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color) !important;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+            padding: 0.75rem !important;
+        }
+
+        .ql-container.ql-snow {
+            border: 1px solid var(--border-color) !important;
+            border-top: none !important;
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+            background-color: var(--bg-secondary);
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .ql-editor {
+            padding: 1.5rem !important;
+            min-height: calc(100vh - 200px);
+        }
+
+        /* Scrollbar styling */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -242,73 +231,25 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--hover-color);
         }
-
-        /* Group colors for dark mode */
-        .group-colors {
-            opacity: 0.8;
-        }
-
-        .group-header span[contenteditable] {
-            outline: none;
-            min-width: 50px;
-            padding: 2px 4px;
-            border-radius: 3px;
-        }
-
-        .group-header span[contenteditable]:focus {
-            background: rgba(255, 255, 255, 0.1);
-        }
     </style>
-    <!-- Add Quill CSS and JS -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
-    
-    <style>
-        /* Add these styles for Quill */
-        .ql-toolbar.ql-snow {
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--border-color) !important;
-            border-top-left-radius: 6px;
-            border-top-right-radius: 6px;
-        }
-
-        .ql-container.ql-snow {
-            border: 1px solid var(--border-color) !important;
-            border-top: none !important;
-            border-bottom-left-radius: 6px;
-            border-bottom-right-radius: 6px;
-            background-color: var(--bg-secondary);
-            color: var(--text-primary);
-            height: calc(100vh - 150px);
-        }
-
-        .ql-editor {
-            font-family: inherit;
-        }
-
-        .ql-snow .ql-stroke {
-            stroke: var(--text-primary) !important;
-        }
-
-        .ql-snow .ql-fill {
-            fill: var(--text-primary) !important;
-        }
-
-        .ql-snow .ql-picker {
-            color: var(--text-primary) !important;
-        }
-
-        .ql-snow .ql-picker-options {
-            background-color: var(--bg-secondary) !important;
-            border-color: var(--border-color) !important;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
         <div class="tree-view">
-            <button class="button add-group-btn" onclick="addNewGroup()">Add New Group</button>
-            <button class="button add-note-btn" onclick="addNewNote(null)">Add New Note</button>
+            <button class="button add-group-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                New Group
+            </button>
+            <button class="button add-note-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                New Note
+            </button>
             <div id="notes-tree"></div>
         </div>
         <div class="note-content">
@@ -345,11 +286,48 @@
         ];
         let colorIndex = parseInt(localStorage.getItem('colorIndex') || '0');
 
+        function getNewGroupTitle() {
+            const existingGroups = notes.filter(item => item.type === 'group');
+            if (existingGroups.length === 0) return 'Group 1';
+            
+            // Find the highest number in existing group titles
+            const numbers = existingGroups
+                .map(g => {
+                    const match = g.title.match(/Group (\d+)/);
+                    return match ? parseInt(match[1]) : 0;
+                })
+                .filter(n => !isNaN(n));
+            
+            const highestNumber = Math.max(0, ...numbers);
+            return `Group ${highestNumber + 1}`;
+        }
+
+        function getNewNoteTitle() {
+            const existingNotes = notes.filter(item => item.type === 'note');
+            const notesInGroups = notes
+                .filter(item => item.type === 'group')
+                .flatMap(group => group.notes);
+            const allNotes = [...existingNotes, ...notesInGroups];
+            
+            if (allNotes.length === 0) return 'Note 1';
+            
+            // Find the highest number in existing note titles
+            const numbers = allNotes
+                .map(n => {
+                    const match = n.title.match(/Note (\d+)/);
+                    return match ? parseInt(match[1]) : 0;
+                })
+                .filter(n => !isNaN(n));
+            
+            const highestNumber = Math.max(0, ...numbers);
+            return `Note ${highestNumber + 1}`;
+        }
+
         function addNewGroup() {
             const group = {
                 id: Date.now(),
                 type: 'group',
-                title: 'New Group',
+                title: getNewGroupTitle(),
                 color: groupColors[colorIndex % groupColors.length],
                 notes: [],
                 created: Date.now(),
@@ -365,7 +343,7 @@
             const note = {
                 id: Date.now(),
                 type: 'note',
-                title: 'New Note',
+                title: getNewNoteTitle(),
                 content: '',
                 groupId: groupId,
                 created: Date.now(),
@@ -463,6 +441,7 @@
         function createNoteElement(note, groupColor) {
             const noteDiv = document.createElement('div');
             noteDiv.className = `tree-item ${note.id === currentNoteId ? 'active' : ''}`;
+            noteDiv.onclick = () => selectNote(note.id);  // Make entire div clickable
             
             if (!groupColor) {
                 noteDiv.style.backgroundColor = 'var(--bg-tertiary)';
@@ -472,30 +451,35 @@
 
             const noteHeader = document.createElement('div');
             noteHeader.className = 'note-header';
+            noteHeader.style.flexDirection = 'column';  // Stack elements vertically
+            noteHeader.style.alignItems = 'flex-start'; // Align items to the left
 
-            const noteInfo = document.createElement('div');
-            noteInfo.className = 'note-info';
+            const titleContainer = document.createElement('div');
+            titleContainer.style.width = '100%';
+            titleContainer.style.display = 'flex';
+            titleContainer.style.justifyContent = 'space-between';
+            titleContainer.style.alignItems = 'center';
 
             const noteTitle = document.createElement('span');
             noteTitle.textContent = note.title;
-            noteTitle.onclick = () => selectNote(note.id);
-
-            const lastModified = document.createElement('small');
-            lastModified.className = 'note-timestamp';  // Add the new class
-            lastModified.textContent = formatLastModified(note.lastModified);
 
             const deleteButton = document.createElement('button');
             deleteButton.className = 'delete-btn';
             deleteButton.textContent = '×';
             deleteButton.onclick = (e) => {
-                e.stopPropagation();
+                e.stopPropagation();  // Prevent note selection when deleting
                 deleteNote(note.id);
             };
 
-            noteInfo.appendChild(noteTitle);
-            noteInfo.appendChild(lastModified);
-            noteHeader.appendChild(noteInfo);
-            noteHeader.appendChild(deleteButton);
+            const lastModified = document.createElement('small');
+            lastModified.className = 'note-timestamp';
+            lastModified.textContent = formatLastModified(note.lastModified);
+            lastModified.style.marginTop = '4px';  // Add some space between title and timestamp
+
+            titleContainer.appendChild(noteTitle);
+            titleContainer.appendChild(deleteButton);
+            noteHeader.appendChild(titleContainer);
+            noteHeader.appendChild(lastModified);
             noteDiv.appendChild(noteHeader);
 
             return noteDiv;
@@ -656,6 +640,16 @@
             } else {
                 updateNotesTree();
             }
+        });
+
+        // Event listener for "New Group" button
+        document.querySelector('.add-group-btn').addEventListener('click', () => {
+            addNewGroup();
+        });
+
+        // Event listener for "New Note" button
+        document.querySelector('.add-note-btn').addEventListener('click', () => {
+            addNewNote(null);  // null means it's a standalone note, not in any group
         });
     </script>
 </body>
