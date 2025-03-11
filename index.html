@@ -79,8 +79,16 @@
             cursor: grabbing;
         }
 
+        .drop-indicator {
+            height: 3px;
+            background-color: #2563eb;
+            margin: 0;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+
         .tree-item:hover {
-            background-color: var(--hover-color);
+            background-color: rgba(0, 0, 0, 0.05);
         }
 
         .tree-item.active {
@@ -89,8 +97,14 @@
         }
 
         .group {
-            margin-left: 0px;
+            cursor: grab;
+            user-select: none;
             margin-bottom: 1.5rem;
+        }
+
+        .group.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
         }
 
         .sub-note {
@@ -157,6 +171,7 @@
             border-radius: 0.5rem;
             transition: all 0.2s ease;
             font-weight: 500;
+            cursor: grab;
         }
 
         .group-header-buttons {
@@ -359,9 +374,10 @@
         }
 
         .drop-indicator {
-            height: 2px;
-            background-color: var(--accent-blue);
+            height: 3px;
+            background-color: #2563eb;
             margin: 4px 0;
+            border-radius: 3px;
             transition: all 0.2s ease;
         }
     </style>
@@ -534,6 +550,8 @@
                 if (item.type === 'group') {
                     const groupDiv = document.createElement('div');
                     groupDiv.className = 'group';
+                    groupDiv.setAttribute('data-id', item.id);
+                    groupDiv.draggable = true; // Make group draggable
                     
                     const groupHeader = document.createElement('div');
                     groupHeader.className = 'group-header tree-item';
@@ -878,109 +896,153 @@
         // Add these functions for drag and drop functionality
         function initDragAndDrop() {
             const notesList = document.getElementById('notes-tree');
-            
             let draggedItem = null;
             let draggedItemGroup = null;
+            let isDraggingGroup = false;
 
             function handleDragStart(e) {
-                draggedItem = e.target;
+                const groupHeader = e.target.closest('.group-header');
+                isDraggingGroup = !!groupHeader;
+                draggedItem = isDraggingGroup ? e.target.closest('.group') : e.target;
                 draggedItemGroup = e.target.closest('.group');
-                e.target.style.opacity = '0.5';
                 
-                // Add dragging class for visual feedback
-                e.target.classList.add('dragging');
+                draggedItem.style.opacity = '0.5';
+                draggedItem.classList.add('dragging');
             }
 
             function handleDragEnd(e) {
-                e.target.style.opacity = '1';
-                e.target.classList.remove('dragging');
+                if (draggedItem) {
+                    draggedItem.style.opacity = '1';
+                    draggedItem.classList.remove('dragging');
+                }
                 draggedItem = null;
                 draggedItemGroup = null;
+                isDraggingGroup = false;
+                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
             }
 
             function handleDragOver(e) {
                 e.preventDefault();
-                const targetItem = e.target.closest('.tree-item');
                 
-                if (!targetItem || !draggedItem || targetItem === draggedItem) return;
+                // Remove existing indicators
+                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+                
+                if (!draggedItem) return;
 
-                const targetGroup = targetItem.closest('.group');
-                
-                // Only allow dropping within the same context (group or standalone)
-                if ((draggedItemGroup && targetGroup && draggedItemGroup === targetGroup) ||
-                    (!draggedItemGroup && !targetGroup)) {
+                let items;
+                if (isDraggingGroup) {
+                    // When dragging groups, only look at other groups
+                    items = [...notesList.querySelectorAll('.group:not(.dragging)')];
+                } else {
+                    // When dragging notes, look at notes within the same context
+                    const container = draggedItemGroup || notesList;
+                    items = [...container.querySelectorAll('.tree-item:not(.dragging):not(.group-header)')];
+                }
+
+                let closestItem = null;
+                let closestOffset = Number.NEGATIVE_INFINITY;
+                let isAfter = false;
+
+                items.forEach(item => {
+                    const box = item.getBoundingClientRect();
+                    const offset = e.clientY - box.top - box.height / 2;
                     
-                    const box = targetItem.getBoundingClientRect();
-                    const offsetY = e.clientY - box.top;
-                    const isBelow = offsetY > box.height / 2;
+                    if (offset < 0 && offset > closestOffset) {
+                        closestOffset = offset;
+                        closestItem = item;
+                        isAfter = false;
+                    } else if (offset >= 0 && -offset > closestOffset) {
+                        closestOffset = -offset;
+                        closestItem = item;
+                        isAfter = true;
+                    }
+                });
 
-                    // Remove existing drop indicators
-                    document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
-
-                    // Create and insert drop indicator
+                if (closestItem) {
                     const indicator = document.createElement('div');
                     indicator.className = 'drop-indicator';
                     
-                    if (isBelow) {
-                        targetItem.parentNode.insertBefore(indicator, targetItem.nextSibling);
+                    if (isDraggingGroup) {
+                        // For groups, insert indicator before/after the entire group
+                        const targetGroup = closestItem.closest('.group') || closestItem;
+                        if (isAfter) {
+                            targetGroup.parentNode.insertBefore(indicator, targetGroup.nextSibling);
+                        } else {
+                            targetGroup.parentNode.insertBefore(indicator, targetGroup);
+                        }
                     } else {
-                        targetItem.parentNode.insertBefore(indicator, targetItem);
+                        // For notes, insert indicator before/after the note
+                        if (isAfter) {
+                            closestItem.parentNode.insertBefore(indicator, closestItem.nextSibling);
+                        } else {
+                            closestItem.parentNode.insertBefore(indicator, closestItem);
+                        }
                     }
-                }
-            }
-
-            function handleDragLeave(e) {
-                if (!e.target.closest('.tree-item')) {
-                    document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
                 }
             }
 
             function handleDrop(e) {
                 e.preventDefault();
-                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
-                
-                const targetItem = e.target.closest('.tree-item');
-                if (!targetItem || !draggedItem || targetItem === draggedItem) return;
+                const indicator = document.querySelector('.drop-indicator');
+                if (!indicator || !draggedItem) return;
 
-                const targetGroup = targetItem.closest('.group');
-                
-                // Only allow dropping within the same context
-                if ((draggedItemGroup && targetGroup && draggedItemGroup === targetGroup) ||
-                    (!draggedItemGroup && !targetGroup)) {
+                if (isDraggingGroup) {
+                    // Handle group reordering
+                    const draggedIndex = notes.findIndex(n => n.id === parseInt(draggedItem.getAttribute('data-id')));
+                    let targetIndex;
                     
-                    const box = targetItem.getBoundingClientRect();
-                    const offsetY = e.clientY - box.top;
-                    const isBelow = offsetY > box.height / 2;
+                    const nextGroup = indicator.nextElementSibling;
+                    const prevGroup = indicator.previousElementSibling;
 
-                    // Update data structure
-                    const draggedId = draggedItem.getAttribute('data-id');
-                    const targetId = targetItem.getAttribute('data-id');
-                    
+                    if (nextGroup && nextGroup.classList.contains('group')) {
+                        targetIndex = notes.findIndex(n => n.id === parseInt(nextGroup.getAttribute('data-id')));
+                    } else if (prevGroup && prevGroup.classList.contains('group')) {
+                        targetIndex = notes.findIndex(n => n.id === parseInt(prevGroup.getAttribute('data-id'))) + 1;
+                    } else {
+                        targetIndex = notes.length;
+                    }
+
+                    // Reorder groups
+                    const [removed] = notes.splice(draggedIndex, 1);
+                    notes.splice(targetIndex, 0, removed);
+                } else {
+                    // Handle note reordering
                     let array = draggedItemGroup ? 
-                        notes.find(g => g.id === draggedItemGroup.getAttribute('data-id')).notes :
+                        notes.find(g => g.id === parseInt(draggedItemGroup.getAttribute('data-id'))).notes :
                         notes;
-                    
+
+                    const draggedId = parseInt(draggedItem.getAttribute('data-id'));
                     const draggedIndex = array.findIndex(n => n.id === draggedId);
-                    let targetIndex = array.findIndex(n => n.id === targetId);
-                    
-                    if (isBelow) targetIndex++;
-                    
-                    // Reorder array
+                    let targetIndex;
+
+                    const nextItem = indicator.nextElementSibling;
+                    const prevItem = indicator.previousElementSibling;
+
+                    if (nextItem && nextItem.classList.contains('tree-item')) {
+                        targetIndex = array.findIndex(n => n.id === parseInt(nextItem.getAttribute('data-id')));
+                    } else if (prevItem && prevItem.classList.contains('tree-item')) {
+                        targetIndex = array.findIndex(n => n.id === parseInt(prevItem.getAttribute('data-id'))) + 1;
+                    } else {
+                        targetIndex = array.length;
+                    }
+
+                    // Reorder notes
                     const [removed] = array.splice(draggedIndex, 1);
                     array.splice(targetIndex, 0, removed);
-
-                    // Update UI and save
-                    updateNotesTree();
-                    saveToLocalStorage();
-                    saveToServer();
                 }
+
+                // Update UI and save
+                updateNotesTree();
+                saveToLocalStorage();
+                saveToServer();
+
+                // Clean up
+                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
             }
 
-            // Add event delegation for drag and drop
             notesList.addEventListener('dragstart', handleDragStart);
             notesList.addEventListener('dragend', handleDragEnd);
             notesList.addEventListener('dragover', handleDragOver);
-            notesList.addEventListener('dragleave', handleDragLeave);
             notesList.addEventListener('drop', handleDrop);
         }
 
