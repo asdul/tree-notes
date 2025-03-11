@@ -75,15 +75,15 @@
         }
 
         .tree-item.dragging {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: grabbing;
         }
 
         .drop-indicator {
-            height: 3px;
-            background-color: #2563eb;
-            margin: 0;
-            border-radius: 3px;
+            height: 4px;
+            background-color: var(--accent-blue);
+            margin: 8px 0;
+            border-radius: 2px;
             transition: all 0.2s ease;
         }
 
@@ -100,10 +100,21 @@
             cursor: grab;
             user-select: none;
             margin-bottom: 1.5rem;
+            transition: transform 0.2s ease;
         }
 
         .group.dragging {
-            opacity: 0.5;
+            opacity: 0.6;
+            cursor: grabbing;
+            transform: scale(1.02);
+            background-color: var(--bg-secondary);
+        }
+
+        .group-header {
+            cursor: grab;
+        }
+
+        .group-header:active {
             cursor: grabbing;
         }
 
@@ -172,6 +183,10 @@
             transition: all 0.2s ease;
             font-weight: 500;
             cursor: grab;
+        }
+
+        .group-header:active {
+            cursor: grabbing;
         }
 
         .group-header-buttons {
@@ -374,10 +389,10 @@
         }
 
         .drop-indicator {
-            height: 3px;
-            background-color: #2563eb;
-            margin: 4px 0;
-            border-radius: 3px;
+            height: 4px;
+            background-color: var(--accent-blue);
+            margin: 8px 0;
+            border-radius: 2px;
             transition: all 0.2s ease;
         }
     </style>
@@ -556,6 +571,7 @@
                     const groupHeader = document.createElement('div');
                     groupHeader.className = 'group-header tree-item';
                     groupHeader.style.backgroundColor = item.color;
+                    groupHeader.draggable = true;  // Make header draggable
                     
                     const groupTitle = document.createElement('span');
                     groupTitle.textContent = item.title;
@@ -897,87 +913,178 @@
         function initDragAndDrop() {
             const notesList = document.getElementById('notes-tree');
             let draggedItem = null;
-            let draggedItemGroup = null;
-            let isDraggingGroup = false;
+            let draggedType = null; // 'note' or 'group'
 
             function handleDragStart(e) {
                 const groupHeader = e.target.closest('.group-header');
-                isDraggingGroup = !!groupHeader;
-                draggedItem = isDraggingGroup ? e.target.closest('.group') : e.target;
-                draggedItemGroup = e.target.closest('.group');
+                const noteItem = e.target.closest('.tree-item:not(.group-header)');
                 
-                draggedItem.style.opacity = '0.5';
+                if (groupHeader) {
+                    draggedItem = e.target.closest('.group');
+                    draggedType = 'group';
+                } else if (noteItem) {
+                    draggedItem = noteItem;
+                    draggedType = 'note';
+                } else {
+                    e.preventDefault();
+                    return;
+                }
+
                 draggedItem.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
             }
 
             function handleDragEnd(e) {
                 if (draggedItem) {
-                    draggedItem.style.opacity = '1';
                     draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                    draggedType = null;
                 }
-                draggedItem = null;
-                draggedItemGroup = null;
-                isDraggingGroup = false;
                 document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
             }
 
             function handleDragOver(e) {
                 e.preventDefault();
-                
-                // Remove existing indicators
-                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+                e.dataTransfer.dropEffect = 'move';
                 
                 if (!draggedItem) return;
 
-                let items;
-                if (isDraggingGroup) {
-                    // When dragging groups, only look at other groups
-                    items = [...notesList.querySelectorAll('.group:not(.dragging)')];
-                } else {
-                    // When dragging notes, look at notes within the same context
-                    const container = draggedItemGroup || notesList;
-                    items = [...container.querySelectorAll('.tree-item:not(.dragging):not(.group-header)')];
-                }
+                // Remove existing indicators
+                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
 
-                let closestItem = null;
+                if (draggedType === 'group') {
+                    handleGroupDragOver(e);
+                } else if (draggedType === 'note') {
+                    handleNoteDragOver(e);
+                }
+            }
+
+            function handleGroupDragOver(e) {
+                const groups = [...notesList.querySelectorAll('.group:not(.dragging)')];
+                
+                let closestGroup = null;
                 let closestOffset = Number.NEGATIVE_INFINITY;
                 let isAfter = false;
 
-                items.forEach(item => {
-                    const box = item.getBoundingClientRect();
+                groups.forEach(group => {
+                    const box = group.getBoundingClientRect();
                     const offset = e.clientY - box.top - box.height / 2;
                     
                     if (offset < 0 && offset > closestOffset) {
                         closestOffset = offset;
-                        closestItem = item;
+                        closestGroup = group;
                         isAfter = false;
                     } else if (offset >= 0 && -offset > closestOffset) {
                         closestOffset = -offset;
-                        closestItem = item;
+                        closestGroup = group;
                         isAfter = true;
                     }
                 });
 
-                if (closestItem) {
+                const indicator = document.createElement('div');
+                indicator.className = 'drop-indicator';
+
+                if (closestGroup) {
+                    if (isAfter) {
+                        closestGroup.parentNode.insertBefore(indicator, closestGroup.nextSibling);
+                    } else {
+                        closestGroup.parentNode.insertBefore(indicator, closestGroup);
+                    }
+                } else {
+                    notesList.appendChild(indicator);
+                }
+            }
+
+            function handleNoteDragOver(e) {
+                const draggedParentGroup = draggedItem.closest('.group');
+                
+                // Check if we're hovering over the main notes-tree area
+                const notesTree = document.getElementById('notes-tree');
+                const notesTreeRect = notesTree.getBoundingClientRect();
+                const isOverMainArea = e.clientY >= notesTreeRect.top && 
+                                      e.clientY <= notesTreeRect.bottom &&
+                                      !e.target.closest('.group');
+
+                // If hovering over main area, allow dropping as standalone note
+                if (isOverMainArea) {
                     const indicator = document.createElement('div');
                     indicator.className = 'drop-indicator';
                     
-                    if (isDraggingGroup) {
-                        // For groups, insert indicator before/after the entire group
-                        const targetGroup = closestItem.closest('.group') || closestItem;
+                    // Find the closest standalone note
+                    const standaloneNotes = [...notesTree.querySelectorAll('.tree-item:not(.dragging):not(.group-header):not(.group .tree-item)')];
+                    let closestNote = null;
+                    let closestOffset = Number.NEGATIVE_INFINITY;
+                    let isAfter = false;
+
+                    standaloneNotes.forEach(note => {
+                        const box = note.getBoundingClientRect();
+                        const offset = e.clientY - box.top - box.height / 2;
+                        
+                        if (offset < 0 && offset > closestOffset) {
+                            closestOffset = offset;
+                            closestNote = note;
+                            isAfter = false;
+                        } else if (offset >= 0 && -offset > closestOffset) {
+                            closestOffset = -offset;
+                            closestNote = note;
+                            isAfter = true;
+                        }
+                    });
+
+                    if (closestNote) {
                         if (isAfter) {
-                            targetGroup.parentNode.insertBefore(indicator, targetGroup.nextSibling);
+                            closestNote.parentNode.insertBefore(indicator, closestNote.nextSibling);
                         } else {
-                            targetGroup.parentNode.insertBefore(indicator, targetGroup);
+                            closestNote.parentNode.insertBefore(indicator, closestNote);
                         }
                     } else {
-                        // For notes, insert indicator before/after the note
-                        if (isAfter) {
-                            closestItem.parentNode.insertBefore(indicator, closestItem.nextSibling);
+                        // If no standalone notes, append to the end of the tree
+                        const lastGroup = notesTree.querySelector('.group:last-child');
+                        if (lastGroup) {
+                            notesTree.insertBefore(indicator, lastGroup.nextSibling);
                         } else {
-                            closestItem.parentNode.insertBefore(indicator, closestItem);
+                            notesTree.appendChild(indicator);
                         }
                     }
+                    return;
+                }
+
+                // Handle dropping into groups (existing logic)
+                const container = e.target.closest('.group');
+                if (!container) return;
+
+                const notes = [...container.querySelectorAll('.tree-item:not(.dragging):not(.group-header)')];
+                
+                let closestNote = null;
+                let closestOffset = Number.NEGATIVE_INFINITY;
+                let isAfter = false;
+
+                notes.forEach(note => {
+                    const box = note.getBoundingClientRect();
+                    const offset = e.clientY - box.top - box.height / 2;
+                    
+                    if (offset < 0 && offset > closestOffset) {
+                        closestOffset = offset;
+                        closestNote = note;
+                        isAfter = false;
+                    } else if (offset >= 0 && -offset > closestOffset) {
+                        closestOffset = -offset;
+                        closestNote = note;
+                        isAfter = true;
+                    }
+                });
+
+                const indicator = document.createElement('div');
+                indicator.className = 'drop-indicator';
+
+                if (closestNote) {
+                    if (isAfter) {
+                        closestNote.parentNode.insertBefore(indicator, closestNote.nextSibling);
+                    } else {
+                        closestNote.parentNode.insertBefore(indicator, closestNote);
+                    }
+                } else {
+                    container.appendChild(indicator);
                 }
             }
 
@@ -986,49 +1093,10 @@
                 const indicator = document.querySelector('.drop-indicator');
                 if (!indicator || !draggedItem) return;
 
-                if (isDraggingGroup) {
-                    // Handle group reordering
-                    const draggedIndex = notes.findIndex(n => n.id === parseInt(draggedItem.getAttribute('data-id')));
-                    let targetIndex;
-                    
-                    const nextGroup = indicator.nextElementSibling;
-                    const prevGroup = indicator.previousElementSibling;
-
-                    if (nextGroup && nextGroup.classList.contains('group')) {
-                        targetIndex = notes.findIndex(n => n.id === parseInt(nextGroup.getAttribute('data-id')));
-                    } else if (prevGroup && prevGroup.classList.contains('group')) {
-                        targetIndex = notes.findIndex(n => n.id === parseInt(prevGroup.getAttribute('data-id'))) + 1;
-                    } else {
-                        targetIndex = notes.length;
-                    }
-
-                    // Reorder groups
-                    const [removed] = notes.splice(draggedIndex, 1);
-                    notes.splice(targetIndex, 0, removed);
-                } else {
-                    // Handle note reordering
-                    let array = draggedItemGroup ? 
-                        notes.find(g => g.id === parseInt(draggedItemGroup.getAttribute('data-id'))).notes :
-                        notes;
-
-                    const draggedId = parseInt(draggedItem.getAttribute('data-id'));
-                    const draggedIndex = array.findIndex(n => n.id === draggedId);
-                    let targetIndex;
-
-                    const nextItem = indicator.nextElementSibling;
-                    const prevItem = indicator.previousElementSibling;
-
-                    if (nextItem && nextItem.classList.contains('tree-item')) {
-                        targetIndex = array.findIndex(n => n.id === parseInt(nextItem.getAttribute('data-id')));
-                    } else if (prevItem && prevItem.classList.contains('tree-item')) {
-                        targetIndex = array.findIndex(n => n.id === parseInt(prevItem.getAttribute('data-id'))) + 1;
-                    } else {
-                        targetIndex = array.length;
-                    }
-
-                    // Reorder notes
-                    const [removed] = array.splice(draggedIndex, 1);
-                    array.splice(targetIndex, 0, removed);
+                if (draggedType === 'group') {
+                    handleGroupDrop(indicator);
+                } else if (draggedType === 'note') {
+                    handleNoteDrop(indicator);
                 }
 
                 // Update UI and save
@@ -1037,7 +1105,79 @@
                 saveToServer();
 
                 // Clean up
-                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+                indicator.remove();
+            }
+
+            function handleGroupDrop(indicator) {
+                const draggedGroupId = parseInt(draggedItem.getAttribute('data-id'));
+                const draggedIndex = notes.findIndex(n => n.id === draggedGroupId);
+                
+                if (draggedIndex === -1) return;
+
+                let targetIndex;
+                const nextGroup = indicator.nextElementSibling;
+                const prevGroup = indicator.previousElementSibling;
+
+                if (nextGroup && nextGroup.classList.contains('group')) {
+                    targetIndex = notes.findIndex(n => n.id === parseInt(nextGroup.getAttribute('data-id')));
+                } else if (prevGroup && prevGroup.classList.contains('group')) {
+                    targetIndex = notes.findIndex(n => n.id === parseInt(prevGroup.getAttribute('data-id'))) + 1;
+                } else {
+                    targetIndex = notes.length;
+                }
+
+                const [movedGroup] = notes.splice(draggedIndex, 1);
+                notes.splice(targetIndex > draggedIndex ? targetIndex - 1 : targetIndex, 0, movedGroup);
+            }
+
+            function handleNoteDrop(indicator) {
+                const draggedNoteId = parseInt(draggedItem.getAttribute('data-id'));
+                const draggedParentGroup = draggedItem.closest('.group');
+                const targetParentGroup = indicator.closest('.group');
+                
+                // Find the source array (where the note is coming from)
+                let sourceArray = draggedParentGroup ? 
+                    notes.find(g => g.id === parseInt(draggedParentGroup.getAttribute('data-id'))).notes :
+                    notes;
+                
+                // Find the target array (where the note is going to)
+                let targetArray = targetParentGroup ?
+                    notes.find(g => g.id === parseInt(targetParentGroup.getAttribute('data-id'))).notes :
+                    notes;
+                
+                const draggedIndex = sourceArray.findIndex(n => n.id === draggedNoteId);
+                if (draggedIndex === -1) return;
+
+                // Remove note from source
+                const [movedNote] = sourceArray.splice(draggedIndex, 1);
+
+                // Find target index
+                let targetIndex;
+                const nextNote = indicator.nextElementSibling;
+                const prevNote = indicator.previousElementSibling;
+
+                if (nextNote && nextNote.classList.contains('tree-item')) {
+                    targetIndex = targetArray.findIndex(n => n.id === parseInt(nextNote.getAttribute('data-id')));
+                } else if (prevNote && prevNote.classList.contains('tree-item')) {
+                    targetIndex = targetArray.findIndex(n => n.id === parseInt(prevNote.getAttribute('data-id'))) + 1;
+                } else {
+                    targetIndex = targetArray.length;
+                }
+
+                // Insert note at target position
+                if (sourceArray === targetArray && targetIndex > draggedIndex) {
+                    targetIndex--;
+                }
+                targetArray.splice(targetIndex, 0, movedNote);
+
+                // Update note's group association
+                if (targetParentGroup) {
+                    movedNote.groupId = parseInt(targetParentGroup.getAttribute('data-id'));
+                } else {
+                    delete movedNote.groupId;
+                }
+
+                movedNote.lastModified = Date.now();
             }
 
             notesList.addEventListener('dragstart', handleDragStart);
