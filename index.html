@@ -39,6 +39,7 @@
         .container {
             display: flex;
             height: 100vh;
+            overflow: hidden; /* Prevent page-level scroll */
         }
 
         .tree-view {
@@ -48,12 +49,17 @@
             border-right: 1px solid var(--border-color);
             overflow-y: auto;
             box-shadow: var(--shadow-md);
+            height: 100vh;
         }
 
         .note-content {
             flex: 1;
             padding: 2rem;
             background-color: var(--bg-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .tree-item {
@@ -99,6 +105,7 @@
             color: var(--text-primary);
             transition: all 0.2s ease;
             font-family: inherit;
+            flex-shrink: 0; /* Prevent title from shrinking */
         }
 
         .button {
@@ -221,6 +228,10 @@
             border-top-left-radius: 0.5rem;
             border-top-right-radius: 0.5rem;
             padding: 0.75rem !important;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            flex-shrink: 0; /* Prevent toolbar from shrinking */
         }
 
         .ql-container.ql-snow {
@@ -231,11 +242,15 @@
             background-color: var(--bg-secondary);
             font-family: inherit;
             font-size: 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .ql-editor {
             padding: 1.5rem !important;
-            min-height: calc(100vh - 200px);
+            overflow-y: auto;
+            flex: 1;
         }
 
         .ql-editor img {
