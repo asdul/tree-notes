@@ -50,7 +50,7 @@
             border-right: 1px solid var(--border-color);
             overflow-y: auto;
             box-shadow: var(--shadow-md);
-            height: 100vh;
+            height: 97vh;
         }
 
         .note-content {
@@ -398,7 +398,7 @@
         }
         .version-info {
             position: absolute;
-            bottom: 10px;
+            bottom: 5px;
             left: 10px;
             font-size: 0.8rem;
             color: var(--text-secondary);
@@ -410,6 +410,7 @@
     <script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
 </head>
 <body>
+    
     <div class="container">
         <div class="tree-view">
             <button class="button add-group-btn">
@@ -425,14 +426,14 @@
                 New Note
             </button>
             <div id="notes-tree"></div>
-            <div class="version-info">v1.1.0</div>
+            
         </div>
         <div class="note-content">
             <input type="text" id="note-title" placeholder="Note Title">
             <div id="note-text"></div>
         </div>
     </div>
-
+    <div class="version-info">v1.1.0</div>
     <script>
         // Initialize Quill
         const quill = new Quill('#note-text', {
