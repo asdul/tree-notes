@@ -105,6 +105,31 @@
             position: relative;
         }
 
+        /* Style for notes within groups */
+        .sub-note.tree-item {
+            padding: 0.5rem 1rem; /* Reduced padding */
+            margin: 0.3rem 0; /* Reduced margin */
+            font-size: 0.9rem; /* Slightly smaller font */
+            margin-left: 1.5rem; /* Indent from group */
+            opacity: 0.9;
+        }
+
+        /* Optional: Add a subtle left border to show hierarchy */
+        .sub-note.tree-item {
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        /* Maintain hover and active states */
+        .sub-note.tree-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .sub-note.tree-item.active {
+            background-color: var(--hover-color);
+            border-left: 3px solid var(--accent-blue);
+        }
+
         .tree-item.dragging {
             opacity: 0.6;
             cursor: grabbing;
