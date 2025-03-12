@@ -39,25 +39,33 @@
         .container {
             display: flex;
             height: 100vh;
+            overflow: hidden; /* Prevent page-level scroll */
         }
 
         .tree-view {
+            position: relative;
             width: 300px;
             background-color: var(--bg-secondary);
             padding: 1.5rem;
             border-right: 1px solid var(--border-color);
             overflow-y: auto;
             box-shadow: var(--shadow-md);
+            height: 100vh;
         }
 
         .note-content {
             flex: 1;
             padding: 2rem;
             background-color: var(--bg-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .tree-item {
-            cursor: pointer;
+            cursor: grab;
+            user-select: none;
             padding: 0.75rem 1rem;
             margin: 0.5rem 0;
             border-radius: 0.5rem;
@@ -67,9 +75,21 @@
             position: relative;
         }
 
+        .tree-item.dragging {
+            opacity: 0.6;
+            cursor: grabbing;
+        }
+
+        .drop-indicator {
+            height: 4px;
+            background-color: var(--accent-blue);
+            margin: 8px 0;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+        }
+
         .tree-item:hover {
-            background-color: var(--hover-color);
-            transform: translateX(2px);
+            background-color: rgba(0, 0, 0, 0.05);
         }
 
         .tree-item.active {
@@ -78,8 +98,25 @@
         }
 
         .group {
-            margin-left: 0px;
+            cursor: grab;
+            user-select: none;
             margin-bottom: 1.5rem;
+            transition: transform 0.2s ease;
+        }
+
+        .group.dragging {
+            opacity: 0.6;
+            cursor: grabbing;
+            transform: scale(1.02);
+            background-color: var(--bg-secondary);
+        }
+
+        .group-header {
+            cursor: grab;
+        }
+
+        .group-header:active {
+            cursor: grabbing;
         }
 
         .sub-note {
@@ -99,6 +136,7 @@
             color: var(--text-primary);
             transition: all 0.2s ease;
             font-family: inherit;
+            flex-shrink: 0; /* Prevent title from shrinking */
         }
 
         .button {
@@ -145,6 +183,11 @@
             border-radius: 0.5rem;
             transition: all 0.2s ease;
             font-weight: 500;
+            cursor: grab;
+        }
+
+        .group-header:active {
+            cursor: grabbing;
         }
 
         .group-header-buttons {
@@ -221,6 +264,10 @@
             border-top-left-radius: 0.5rem;
             border-top-right-radius: 0.5rem;
             padding: 0.75rem !important;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            flex-shrink: 0; /* Prevent toolbar from shrinking */
         }
 
         .ql-container.ql-snow {
@@ -231,11 +278,15 @@
             background-color: var(--bg-secondary);
             font-family: inherit;
             font-size: 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .ql-editor {
             padding: 1.5rem !important;
-            min-height: calc(100vh - 200px);
+            overflow-y: auto;
+            flex: 1;
         }
 
         .ql-editor img {
@@ -337,6 +388,23 @@
         .tree-item:hover .note-preview {
             display: none;
         }
+
+        .drop-indicator {
+            height: 4px;
+            background-color: var(--accent-blue);
+            margin: 8px 0;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+        }
+
+        .version-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
     </style>
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
@@ -358,6 +426,7 @@
                 New Note
             </button>
             <div id="notes-tree"></div>
+            <div class="version-info">v1.1.0</div>
         </div>
         <div class="note-content">
             <input type="text" id="note-title" placeholder="Note Title">
@@ -507,10 +576,13 @@
                 if (item.type === 'group') {
                     const groupDiv = document.createElement('div');
                     groupDiv.className = 'group';
+                    groupDiv.setAttribute('data-id', item.id);
+                    groupDiv.draggable = true; // Make group draggable
                     
                     const groupHeader = document.createElement('div');
                     groupHeader.className = 'group-header tree-item';
                     groupHeader.style.backgroundColor = item.color;
+                    groupHeader.draggable = true;  // Make header draggable
                     
                     const groupTitle = document.createElement('span');
                     groupTitle.textContent = item.title;
@@ -575,6 +647,8 @@
         function createNoteElement(note, groupColor) {
             const noteDiv = document.createElement('div');
             noteDiv.className = `tree-item ${note.id === currentNoteId ? 'active' : ''}`;
+            noteDiv.setAttribute('data-id', note.id);
+            noteDiv.draggable = true; // Make element draggable
             noteDiv.onclick = () => selectNote(note.id);
 
             if (!groupColor) {
@@ -846,6 +920,283 @@
             }
         }
 
+        // Add these functions for drag and drop functionality
+        function initDragAndDrop() {
+            const notesList = document.getElementById('notes-tree');
+            let draggedItem = null;
+            let draggedType = null; // 'note' or 'group'
+
+            function handleDragStart(e) {
+                const groupHeader = e.target.closest('.group-header');
+                const noteItem = e.target.closest('.tree-item:not(.group-header)');
+                
+                if (groupHeader) {
+                    draggedItem = e.target.closest('.group');
+                    draggedType = 'group';
+                } else if (noteItem) {
+                    draggedItem = noteItem;
+                    draggedType = 'note';
+                } else {
+                    e.preventDefault();
+                    return;
+                }
+
+                draggedItem.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            }
+
+            function handleDragEnd(e) {
+                if (draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                    draggedType = null;
+                }
+                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                
+                if (!draggedItem) return;
+
+                // Remove existing indicators
+                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+
+                if (draggedType === 'group') {
+                    handleGroupDragOver(e);
+                } else if (draggedType === 'note') {
+                    handleNoteDragOver(e);
+                }
+            }
+
+            function handleGroupDragOver(e) {
+                const groups = [...notesList.querySelectorAll('.group:not(.dragging)')];
+                
+                let closestGroup = null;
+                let closestOffset = Number.NEGATIVE_INFINITY;
+                let isAfter = false;
+
+                groups.forEach(group => {
+                    const box = group.getBoundingClientRect();
+                    const offset = e.clientY - box.top - box.height / 2;
+                    
+                    if (offset < 0 && offset > closestOffset) {
+                        closestOffset = offset;
+                        closestGroup = group;
+                        isAfter = false;
+                    } else if (offset >= 0 && -offset > closestOffset) {
+                        closestOffset = -offset;
+                        closestGroup = group;
+                        isAfter = true;
+                    }
+                });
+
+                const indicator = document.createElement('div');
+                indicator.className = 'drop-indicator';
+
+                if (closestGroup) {
+                    if (isAfter) {
+                        closestGroup.parentNode.insertBefore(indicator, closestGroup.nextSibling);
+                    } else {
+                        closestGroup.parentNode.insertBefore(indicator, closestGroup);
+                    }
+                } else {
+                    notesList.appendChild(indicator);
+                }
+            }
+
+            function handleNoteDragOver(e) {
+                const draggedParentGroup = draggedItem.closest('.group');
+                
+                // Check if we're hovering over the main notes-tree area
+                const notesTree = document.getElementById('notes-tree');
+                const notesTreeRect = notesTree.getBoundingClientRect();
+                const isOverMainArea = e.clientY >= notesTreeRect.top && 
+                                      e.clientY <= notesTreeRect.bottom &&
+                                      !e.target.closest('.group');
+
+                // If hovering over main area, allow dropping as standalone note
+                if (isOverMainArea) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'drop-indicator';
+                    
+                    // Find the closest standalone note
+                    const standaloneNotes = [...notesTree.querySelectorAll('.tree-item:not(.dragging):not(.group-header):not(.group .tree-item)')];
+                    let closestNote = null;
+                    let closestOffset = Number.NEGATIVE_INFINITY;
+                    let isAfter = false;
+
+                    standaloneNotes.forEach(note => {
+                        const box = note.getBoundingClientRect();
+                        const offset = e.clientY - box.top - box.height / 2;
+                        
+                        if (offset < 0 && offset > closestOffset) {
+                            closestOffset = offset;
+                            closestNote = note;
+                            isAfter = false;
+                        } else if (offset >= 0 && -offset > closestOffset) {
+                            closestOffset = -offset;
+                            closestNote = note;
+                            isAfter = true;
+                        }
+                    });
+
+                    if (closestNote) {
+                        if (isAfter) {
+                            closestNote.parentNode.insertBefore(indicator, closestNote.nextSibling);
+                        } else {
+                            closestNote.parentNode.insertBefore(indicator, closestNote);
+                        }
+                    } else {
+                        // If no standalone notes, append to the end of the tree
+                        const lastGroup = notesTree.querySelector('.group:last-child');
+                        if (lastGroup) {
+                            notesTree.insertBefore(indicator, lastGroup.nextSibling);
+                        } else {
+                            notesTree.appendChild(indicator);
+                        }
+                    }
+                    return;
+                }
+
+                // Handle dropping into groups (existing logic)
+                const container = e.target.closest('.group');
+                if (!container) return;
+
+                const notes = [...container.querySelectorAll('.tree-item:not(.dragging):not(.group-header)')];
+                
+                let closestNote = null;
+                let closestOffset = Number.NEGATIVE_INFINITY;
+                let isAfter = false;
+
+                notes.forEach(note => {
+                    const box = note.getBoundingClientRect();
+                    const offset = e.clientY - box.top - box.height / 2;
+                    
+                    if (offset < 0 && offset > closestOffset) {
+                        closestOffset = offset;
+                        closestNote = note;
+                        isAfter = false;
+                    } else if (offset >= 0 && -offset > closestOffset) {
+                        closestOffset = -offset;
+                        closestNote = note;
+                        isAfter = true;
+                    }
+                });
+
+                const indicator = document.createElement('div');
+                indicator.className = 'drop-indicator';
+
+                if (closestNote) {
+                    if (isAfter) {
+                        closestNote.parentNode.insertBefore(indicator, closestNote.nextSibling);
+                    } else {
+                        closestNote.parentNode.insertBefore(indicator, closestNote);
+                    }
+                } else {
+                    container.appendChild(indicator);
+                }
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                const indicator = document.querySelector('.drop-indicator');
+                if (!indicator || !draggedItem) return;
+
+                if (draggedType === 'group') {
+                    handleGroupDrop(indicator);
+                } else if (draggedType === 'note') {
+                    handleNoteDrop(indicator);
+                }
+
+                // Update UI and save
+                updateNotesTree();
+                saveToLocalStorage();
+                saveToServer();
+
+                // Clean up
+                indicator.remove();
+            }
+
+            function handleGroupDrop(indicator) {
+                const draggedGroupId = parseInt(draggedItem.getAttribute('data-id'));
+                const draggedIndex = notes.findIndex(n => n.id === draggedGroupId);
+                
+                if (draggedIndex === -1) return;
+
+                let targetIndex;
+                const nextGroup = indicator.nextElementSibling;
+                const prevGroup = indicator.previousElementSibling;
+
+                if (nextGroup && nextGroup.classList.contains('group')) {
+                    targetIndex = notes.findIndex(n => n.id === parseInt(nextGroup.getAttribute('data-id')));
+                } else if (prevGroup && prevGroup.classList.contains('group')) {
+                    targetIndex = notes.findIndex(n => n.id === parseInt(prevGroup.getAttribute('data-id'))) + 1;
+                } else {
+                    targetIndex = notes.length;
+                }
+
+                const [movedGroup] = notes.splice(draggedIndex, 1);
+                notes.splice(targetIndex > draggedIndex ? targetIndex - 1 : targetIndex, 0, movedGroup);
+            }
+
+            function handleNoteDrop(indicator) {
+                const draggedNoteId = parseInt(draggedItem.getAttribute('data-id'));
+                const draggedParentGroup = draggedItem.closest('.group');
+                const targetParentGroup = indicator.closest('.group');
+                
+                // Find the source array (where the note is coming from)
+                let sourceArray = draggedParentGroup ? 
+                    notes.find(g => g.id === parseInt(draggedParentGroup.getAttribute('data-id'))).notes :
+                    notes;
+                
+                // Find the target array (where the note is going to)
+                let targetArray = targetParentGroup ?
+                    notes.find(g => g.id === parseInt(targetParentGroup.getAttribute('data-id'))).notes :
+                    notes;
+                
+                const draggedIndex = sourceArray.findIndex(n => n.id === draggedNoteId);
+                if (draggedIndex === -1) return;
+
+                // Remove note from source
+                const [movedNote] = sourceArray.splice(draggedIndex, 1);
+
+                // Find target index
+                let targetIndex;
+                const nextNote = indicator.nextElementSibling;
+                const prevNote = indicator.previousElementSibling;
+
+                if (nextNote && nextNote.classList.contains('tree-item')) {
+                    targetIndex = targetArray.findIndex(n => n.id === parseInt(nextNote.getAttribute('data-id')));
+                } else if (prevNote && prevNote.classList.contains('tree-item')) {
+                    targetIndex = targetArray.findIndex(n => n.id === parseInt(prevNote.getAttribute('data-id'))) + 1;
+                } else {
+                    targetIndex = targetArray.length;
+                }
+
+                // Insert note at target position
+                if (sourceArray === targetArray && targetIndex > draggedIndex) {
+                    targetIndex--;
+                }
+                targetArray.splice(targetIndex, 0, movedNote);
+
+                // Update note's group association
+                if (targetParentGroup) {
+                    movedNote.groupId = parseInt(targetParentGroup.getAttribute('data-id'));
+                } else {
+                    delete movedNote.groupId;
+                }
+
+                movedNote.lastModified = Date.now();
+            }
+
+            notesList.addEventListener('dragstart', handleDragStart);
+            notesList.addEventListener('dragend', handleDragEnd);
+            notesList.addEventListener('dragover', handleDragOver);
+            notesList.addEventListener('drop', handleDrop);
+        }
+
         // Initialize the app
         window.addEventListener('DOMContentLoaded', async () => {
             await loadFromServer();
@@ -854,7 +1205,15 @@
                 addNewNote(null);
             } else {
                 updateNotesTree();
+                // Select first note
+                const firstNote = notes.find(n => n.type === 'note') || 
+                    (notes.find(g => g.type === 'group' && g.notes.length > 0)?.notes[0]);
+                if (firstNote) {
+                    selectNote(firstNote.id);
+                }
             }
+            
+            initDragAndDrop(); // Initialize drag and drop functionality
         });
 
         // Event listener for "New Group" button
