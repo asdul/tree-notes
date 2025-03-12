@@ -46,11 +46,32 @@
             position: relative;
             width: 300px;
             background-color: var(--bg-secondary);
-            padding: 1.5rem;
+            padding: 1.0rem;
             border-right: 1px solid var(--border-color);
-            overflow-y: auto;
             box-shadow: var(--shadow-md);
-            height: 97vh;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* New styles for buttons container */
+        .buttons-container {
+            position: sticky;
+            top: 0;
+            background-color: var(--bg-secondary);
+            padding-bottom: 1rem;
+            z-index: 1;
+            width: 100%; /* Ensure it takes full width */
+        }
+
+        /* Modify notes-tree container */
+        #notes-tree {
+            overflow-y: auto;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            flex: 1;
+            padding-right: 1.5rem;
+            width: 100%; /* Ensure it takes full width */
         }
 
         .note-content {
@@ -71,7 +92,9 @@
             border-radius: 0.5rem;
             transition: all 0.2s ease;
             font-size: 0.95rem;
-            width: 100%;
+            width: calc(100% - 10px); /* Adjust width to account for padding */
+            min-width: 0; /* Prevent content from forcing width */
+            box-sizing: border-box;
             position: relative;
         }
 
@@ -102,6 +125,8 @@
             user-select: none;
             margin-bottom: 1.5rem;
             transition: transform 0.2s ease;
+            width: 100%;
+            min-width: 0; /* Prevent content from forcing width */
         }
 
         .group.dragging {
@@ -413,27 +438,28 @@
     
     <div class="container">
         <div class="tree-view">
-            <button class="button add-group-btn">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
-                New Group
-            </button>
-            <button class="button add-note-btn">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                </svg>
-                New Note
-            </button>
+            <div class="buttons-container">
+                <button class="button add-group-btn">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    New Group
+                </button>
+                <button class="button add-note-btn">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    New Note
+                </button>
+            </div>
             <div id="notes-tree"></div>
-            
+            <div class="version-info">v1.1.0</div>
         </div>
         <div class="note-content">
             <input type="text" id="note-title" placeholder="Note Title">
             <div id="note-text"></div>
         </div>
     </div>
-    <div class="version-info">v1.1.0</div>
     <script>
         // Initialize Quill
         const quill = new Quill('#note-text', {
