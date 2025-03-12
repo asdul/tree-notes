@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree Note Taking App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #242424;
+            --bg-tertiary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --accent-blue: #4f46e5;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --border-color: #333333;
+            --hover-color: #363636;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden; /* Prevent page-level scroll */
+        }
+
+        .tree-view {
+            width: 300px;
+            background-color: var(--bg-secondary);
+            padding: 1.5rem;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+            height: 100vh;
+        }
+
+        .note-content {
+            flex: 1;
+            padding: 2rem;
+            background-color: var(--bg-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tree-item {
+            cursor: grab;
+            user-select: none;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            width: 100%;
+            position: relative;
+        }
+
+        .tree-item.dragging {
+            opacity: 0.6;
+            cursor: grabbing;
+        }
+
+        .drop-indicator {
+            height: 4px;
+            background-color: var(--accent-blue);
+            margin: 8px 0;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+        }
+
+        .tree-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .tree-item.active {
+            background-color: var(--hover-color);
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        .group {
+            cursor: grab;
+            user-select: none;
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s ease;
+        }
+
+        .group.dragging {
+            opacity: 0.6;
+            cursor: grabbing;
+            transform: scale(1.02);
+            background-color: var(--bg-secondary);
+        }
+
+        .group-header {
+            cursor: grab;
+        }
+
+        .group-header:active {
+            cursor: grabbing;
+        }
+
+        .sub-note {
+            margin-left: 1.5rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        #note-title {
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            font-family: inherit;
+            flex-shrink: 0; /* Prevent title from shrinking */
+        }
+
+        .button {
+            width: 100%;
+            padding: 0.875rem;
+            color: var(--text-primary);
+            border: none;
+            cursor: pointer;
+            margin-bottom: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .button:hover {
+            transform: translateY(-1px);
+            filter: brightness(110%);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .add-group-btn {
+            background-color: var(--accent-blue);
+        }
+
+        .add-note-btn {
+            background-color: var(--accent-green);
+        }
+
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            cursor: grab;
+        }
+
+        .group-header:active {
+            cursor: grabbing;
+        }
+
+        .group-header-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .group-header-buttons button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+
+        .group-header-buttons button:hover {
+            opacity: 1;
+            background: transparent;
+        }
+
+        .delete-btn, 
+        .tree-item .delete-btn {
+            background: transparent !important;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            color: var(--accent-red) !important;
+            font-size: 1.1rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+            margin: 0;
+        }
+
+        .delete-btn:hover,
+        .tree-item .delete-btn:hover {
+            opacity: 1;
+            background: transparent !important;
+        }
+
+        .rename-btn {
+            color: var(--text-primary);
+        }
+
+        .note-header {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            padding: 0;
+            border-radius: 0.375rem;
+        }
+
+        .note-timestamp {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Quill editor customization */
+        .ql-toolbar.ql-snow {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color) !important;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+            padding: 0.75rem !important;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            flex-shrink: 0; /* Prevent toolbar from shrinking */
+        }
+
+        .ql-container.ql-snow {
+            border: 1px solid var(--border-color) !important;
+            border-top: none !important;
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+            background-color: var(--bg-secondary);
+            font-family: inherit;
+            font-size: 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ql-editor {
+            padding: 1.5rem !important;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .ql-editor img {
+            max-width: 100%;
+            height: auto;
+            cursor: pointer;
+        }
+
+        .ql-editor img.focused {
+            outline: 2px solid var(--accent-blue);
+        }
+
+        .ql-editor img:hover {
+            outline: 2px solid var(--accent-blue);
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--hover-color);
+        }
+
+        .note-preview {
+            position: fixed;
+            width: 300px;
+            max-height: 250px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            display: none;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            pointer-events: none;
+            backdrop-filter: blur(8px);
+        }
+
+        .note-preview-title {
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            background-color: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .note-preview-title::before {
+            content: "📝";
+            font-size: 1rem;
+        }
+
+        .note-preview-content {
+            padding: 1rem;
+            overflow: hidden;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            max-height: 180px; /* Limit height to roughly 6 lines + padding */
+        }
+
+        .note-preview-content p {
+            margin: 0;
+            padding: 0;
+            white-space: pre-line; /* Preserves line breaks */
+        }
+
+        .note-preview-content p + p {
+            margin-top: 0.5rem; /* Add space between paragraphs */
+        }
+
+        .preview-ellipsis {
+            color: var(--text-secondary);
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+
+        .note-preview-empty {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* Remove the hover display rule since we'll handle it with JavaScript */
+        .tree-item:hover .note-preview {
+            display: none;
+        }
+
+        .drop-indicator {
+            height: 4px;
+            background-color: var(--accent-blue);
+            margin: 8px 0;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+        }
+    </style>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="tree-view">
+            <button class="button add-group-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                New Group
+            </button>
+            <button class="button add-note-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                New Note
+            </button>
+            <div id="notes-tree"></div>
+        </div>
+        <div class="note-content">
+            <input type="text" id="note-title" placeholder="Note Title">
+            <div id="note-text"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Quill
+        const quill = new Quill('#note-text', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    ['link', 'image'],
+                    ['clean']
+                ],
+                imageResize: {
+                    displaySize: true,
+                    modules: ['Resize', 'DisplaySize']
+                }
+            },
+            placeholder: 'Write your note here...'
+        });
+
+        // Add image handler to make images resizable
+        quill.getModule('toolbar').addHandler('image', () => {
+            const input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*');
+            input.click();
+
+            input.onchange = async () => {
+                const file = input.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const range = quill.getSelection(true);
+                        quill.insertEmbed(range.index, 'image', reader.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+        });
+
+        let notes = JSON.parse(localStorage.getItem('notes') || '[]');
+        let currentNoteId = null;
+        const groupColors = [
+            '#4a148c', '#1a237e', '#0d47a1', '#004d40',
+            '#1b5e20', '#b71c1c', '#4a148c', '#311b92'
+        ];
+        let colorIndex = parseInt(localStorage.getItem('colorIndex') || '0');
+
+        function getNewGroupTitle() {
+            const existingGroups = notes.filter(item => item.type === 'group');
+            if (existingGroups.length === 0) return 'Group 1';
+            
+            // Find the highest number in existing group titles
+            const numbers = existingGroups
+                .map(g => {
+                    const match = g.title.match(/Group (\d+)/);
+                    return match ? parseInt(match[1]) : 0;
+                })
+                .filter(n => !isNaN(n));
+            
+            const highestNumber = Math.max(0, ...numbers);
+            return `Group ${highestNumber + 1}`;
+        }
+
+        function getNewNoteTitle() {
+            const existingNotes = notes.filter(item => item.type === 'note');
+            const notesInGroups = notes
+                .filter(item => item.type === 'group')
+                .flatMap(group => group.notes);
+            const allNotes = [...existingNotes, ...notesInGroups];
+            
+            if (allNotes.length === 0) return 'Note 1';
+            
+            // Find the highest number in existing note titles
+            const numbers = allNotes
+                .map(n => {
+                    const match = n.title.match(/Note (\d+)/);
+                    return match ? parseInt(match[1]) : 0;
+                })
+                .filter(n => !isNaN(n));
+            
+            const highestNumber = Math.max(0, ...numbers);
+            return `Note ${highestNumber + 1}`;
+        }
+
+        function addNewGroup() {
+            const group = {
+                id: Date.now(),
+                type: 'group',
+                title: getNewGroupTitle(),
+                color: groupColors[colorIndex % groupColors.length],
+                notes: [],
+                created: Date.now(),
+                lastModified: Date.now()
+            };
+            colorIndex++;
+            notes.push(group);
+            updateNotesTree();
+            saveToLocalStorage();
+        }
+
+        function addNewNote(groupId) {
+            const note = {
+                id: Date.now(),
+                type: 'note',
+                title: getNewNoteTitle(),
+                content: '',
+                groupId: groupId,
+                created: Date.now(),
+                lastModified: Date.now()
+            };
+            
+            if (groupId) {
+                const group = notes.find(g => g.id === groupId);
+                if (group) {
+                    group.notes.push(note);
+                    group.lastModified = Date.now();
+                }
+            } else {
+                notes.push(note);
+            }
+            
+            updateNotesTree();
+            saveToLocalStorage();
+            selectNote(note.id);
+        }
+
+        function updateNotesTree() {
+            // Remove all existing previews
+            document.querySelectorAll('.note-preview').forEach(preview => preview.remove());
+            
+            const treeContainer = document.getElementById('notes-tree');
+            treeContainer.innerHTML = '';
+            
+            notes.forEach(item => {
+                if (item.type === 'group') {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'group';
+                    groupDiv.setAttribute('data-id', item.id);
+                    groupDiv.draggable = true; // Make group draggable
+                    
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'group-header tree-item';
+                    groupHeader.style.backgroundColor = item.color;
+                    groupHeader.draggable = true;  // Make header draggable
+                    
+                    const groupTitle = document.createElement('span');
+                    groupTitle.textContent = item.title;
+                    
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'group-header-buttons';
+
+                    // Add rename button
+                    const renameButton = document.createElement('button');
+                    renameButton.className = 'rename-btn';
+                    renameButton.innerHTML = '✎'; // Pencil icon
+                    renameButton.onclick = (e) => {
+                        e.stopPropagation();
+                        const newTitle = prompt('Enter new group name:', item.title);
+                        if (newTitle && newTitle.trim()) {
+                            item.title = newTitle.trim();
+                            item.lastModified = Date.now();
+                            updateNotesTree();
+                            saveToServer();
+                        }
+                    };
+
+                    const addButton = document.createElement('button');
+                    addButton.className = 'add-sub-note';
+                    addButton.textContent = '+';
+                    addButton.onclick = (e) => {
+                        e.stopPropagation();
+                        addNewNote(item.id);
+                    };
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'delete-btn';
+                    deleteButton.textContent = '×';
+                    deleteButton.onclick = (e) => {
+                        e.stopPropagation();
+                        deleteGroup(item.id);
+                    };
+                    
+                    buttonContainer.appendChild(renameButton);
+                    buttonContainer.appendChild(addButton);
+                    buttonContainer.appendChild(deleteButton);
+                    
+                    groupHeader.appendChild(groupTitle);
+                    groupHeader.appendChild(buttonContainer);
+                    groupDiv.appendChild(groupHeader);
+                    
+                    // Add sub-notes
+                    item.notes.forEach(note => {
+                        const noteElement = createNoteElement(note, item.color);
+                        noteElement.className += ' sub-note';
+                        groupDiv.appendChild(noteElement);
+                    });
+                    
+                    treeContainer.appendChild(groupDiv);
+                } else if (item.type === 'note' && !item.groupId) {
+                    // Add standalone notes
+                    treeContainer.appendChild(createNoteElement(item));
+                }
+            });
+        }
+
+        function createNoteElement(note, groupColor) {
+            const noteDiv = document.createElement('div');
+            noteDiv.className = `tree-item ${note.id === currentNoteId ? 'active' : ''}`;
+            noteDiv.setAttribute('data-id', note.id);
+            noteDiv.draggable = true; // Make element draggable
+            noteDiv.onclick = () => selectNote(note.id);
+
+            if (!groupColor) {
+                noteDiv.style.backgroundColor = 'var(--bg-tertiary)';
+            } else {
+                noteDiv.style.backgroundColor = groupColor;
+            }
+
+            const noteHeader = document.createElement('div');
+            noteHeader.className = 'note-header';
+            noteHeader.style.flexDirection = 'column';
+            noteHeader.style.alignItems = 'flex-start';
+
+            const titleContainer = document.createElement('div');
+            titleContainer.style.width = '100%';
+            titleContainer.style.display = 'flex';
+            titleContainer.style.justifyContent = 'space-between';
+            titleContainer.style.alignItems = 'center';
+
+            const noteTitle = document.createElement('span');
+            noteTitle.textContent = note.title;
+
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-btn';
+            deleteButton.textContent = '×';
+            deleteButton.onclick = (e) => {
+                e.stopPropagation();
+                deleteNote(note.id);
+            };
+
+            const lastModified = document.createElement('small');
+            lastModified.className = 'note-timestamp';
+            lastModified.textContent = formatLastModified(note.lastModified);
+            lastModified.style.marginTop = '4px';
+
+            // Create preview element with enhanced formatting
+            const preview = document.createElement('div');
+            preview.className = 'note-preview';
+            
+            const previewTitle = document.createElement('div');
+            previewTitle.className = 'note-preview-title';
+            previewTitle.textContent = note.title;
+            
+            const previewContent = document.createElement('div');
+            previewContent.className = 'note-preview-content';
+            
+            // Format the content while preserving line breaks
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = note.content || '';
+            
+            if (tempDiv.textContent.trim()) {
+                // Convert <p> and <br> tags to line breaks and preserve them
+                const formattedContent = tempDiv.innerHTML
+                    .replace(/<p>/g, '')
+                    .replace(/<\/p>/g, '\n')
+                    .replace(/<br\s*\/?>/g, '\n')
+                    .replace(/<[^>]*>/g, ''); // Remove any other HTML tags
+                
+                // Split into lines, trim each line, and limit to 6 lines
+                const lines = formattedContent
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0)
+                    .slice(0, 6);
+                
+                // Create paragraph elements for each line
+                lines.forEach((line, index) => {
+                    const p = document.createElement('p');
+                    p.textContent = line;
+                    previewContent.appendChild(p);
+                });
+                
+                // Add ellipsis if there are more lines
+                if (formattedContent.split('\n').filter(line => line.trim().length > 0).length > 6) {
+                    const ellipsis = document.createElement('p');
+                    ellipsis.textContent = '...';
+                    ellipsis.className = 'preview-ellipsis';
+                    previewContent.appendChild(ellipsis);
+                }
+            } else {
+                previewContent.innerHTML = '<span class="note-preview-empty">Empty note</span>';
+            }
+
+            preview.appendChild(previewTitle);
+            preview.appendChild(previewContent);
+
+            // Mouse event listeners
+            noteDiv.addEventListener('mousemove', (e) => {
+                preview.style.display = 'block';
+                
+                const offset = 15;
+                let left = e.clientX + offset;
+                let top = e.clientY + offset;
+
+                // Prevent preview from going off-screen
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                const previewRect = preview.getBoundingClientRect();
+
+                if (left + previewRect.width > viewportWidth) {
+                    left = e.clientX - previewRect.width - offset;
+                }
+
+                if (top + previewRect.height > viewportHeight) {
+                    top = e.clientY - previewRect.height - offset;
+                }
+
+                preview.style.left = `${left}px`;
+                preview.style.top = `${top}px`;
+            });
+
+            noteDiv.addEventListener('mouseleave', () => {
+                preview.style.display = 'none';
+            });
+
+            titleContainer.appendChild(noteTitle);
+            titleContainer.appendChild(deleteButton);
+            noteHeader.appendChild(titleContainer);
+            noteHeader.appendChild(lastModified);
+            noteDiv.appendChild(noteHeader);
+            document.body.appendChild(preview); // Append to body instead of noteDiv
+
+            return noteDiv;
+        }
+
+        function selectNote(id) {
+            currentNoteId = id;
+            let note = null;
+            
+            note = notes.find(n => n.type === 'note' && n.id === id);
+            
+            if (!note) {
+                notes.forEach(group => {
+                    if (group.type === 'group') {
+                        const foundNote = group.notes.find(n => n.id === id);
+                        if (foundNote) note = foundNote;
+                    }
+                });
+            }
+            
+            if (note) {
+                document.getElementById('note-title').value = note.title;
+                quill.root.innerHTML = note.content || '';
+                updateNotesTree();
+            }
+        }
+
+        function saveCurrentNote() {
+            if (!currentNoteId) return;
+            
+            let note = notes.find(n => n.type === 'note' && n.id === currentNoteId);
+            
+            if (!note) {
+                notes.forEach(group => {
+                    if (group.type === 'group') {
+                        const foundNote = group.notes.find(n => n.id === currentNoteId);
+                        if (foundNote) note = foundNote;
+                    }
+                });
+            }
+            
+            if (note) {
+                note.title = document.getElementById('note-title').value;
+                note.content = quill.root.innerHTML;
+                note.lastModified = Date.now(); // Add timestamp
+                updateNotesTree();
+                saveToLocalStorage();
+            }
+        }
+
+        function deleteNote(noteId) {
+            if (confirm('Are you sure you want to delete this note?')) {
+                // Remove from standalone notes
+                notes = notes.filter(n => n.type === 'group' || n.id !== noteId);
+                
+                // Remove from groups
+                notes.forEach(group => {
+                    if (group.type === 'group') {
+                        group.notes = group.notes.filter(n => n.id !== noteId);
+                        if (group.notes.length !== group.notes.filter(n => n.id !== noteId).length) {
+                            group.lastModified = Date.now();
+                        }
+                    }
+                });
+
+                if (currentNoteId === noteId) {
+                    currentNoteId = null;
+                    document.getElementById('note-title').value = '';
+                    quill.setContents([]);
+                }
+                
+                updateNotesTree();
+                saveToLocalStorage();
+            }
+        }
+
+        function deleteGroup(groupId) {
+            if (confirm('Are you sure you want to delete this group and all its notes?')) {
+                const group = notes.find(g => g.id === groupId);
+                if (group) {
+                    group.notes.forEach(note => {
+                        if (note.id === currentNoteId) {
+                            currentNoteId = null;
+                            document.getElementById('note-title').value = '';
+                            quill.setContents([]);
+                        }
+                    });
+                }
+                
+                notes = notes.filter(item => item.id !== groupId);
+                updateNotesTree();
+                saveToLocalStorage();
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('notes', JSON.stringify(notes));
+            localStorage.setItem('colorIndex', colorIndex.toString());
+            saveToServer();
+        }
+
+        function formatLastModified(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+
+        // Add event listeners for auto-saving
+        document.getElementById('note-title').addEventListener('input', saveCurrentNote);
+        quill.on('text-change', saveCurrentNote);
+
+        // Add auto-save interval (save every 30 seconds)
+        setInterval(saveCurrentNote, 30000);
+
+        // Add event listener for beforeunload to save before closing
+        window.addEventListener('beforeunload', saveCurrentNote);
+
+        // Add new function to save to server
+        async function saveToServer() {
+            try {
+                const response = await fetch('/api/notes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(notes)
+                });
+                
+                if (!response.ok) {
+                    console.error('Failed to save to server:', await response.text());
+                }
+            } catch (err) {
+                console.error('Error saving to server:', err);
+            }
+        }
+
+        // Add function to load from server
+        async function loadFromServer() {
+            try {
+                const response = await fetch('/api/notes');
+                if (response.ok) {
+                    const serverNotes = await response.json();
+                    if (serverNotes && serverNotes.length > 0) {
+                        notes = serverNotes;
+                        updateNotesTree();
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading from server:', err);
+            }
+        }
+
+        // Add these functions for drag and drop functionality
+        function initDragAndDrop() {
+            const notesList = document.getElementById('notes-tree');
+            let draggedItem = null;
+            let draggedType = null; // 'note' or 'group'
+
+            function handleDragStart(e) {
+                const groupHeader = e.target.closest('.group-header');
+                const noteItem = e.target.closest('.tree-item:not(.group-header)');
+                
+                if (groupHeader) {
+                    draggedItem = e.target.closest('.group');
+                    draggedType = 'group';
+                } else if (noteItem) {
+                    draggedItem = noteItem;
+                    draggedType = 'note';
+                } else {
+                    e.preventDefault();
+                    return;
+                }
+
+                draggedItem.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            }
+
+            function handleDragEnd(e) {
+                if (draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                    draggedType = null;
+                }
+                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                
+                if (!draggedItem) return;
+
+                // Remove existing indicators
+                document.querySelectorAll('.drop-indicator').forEach(el => el.remove());
+
+                if (draggedType === 'group') {
+                    handleGroupDragOver(e);
+                } else if (draggedType === 'note') {
+                    handleNoteDragOver(e);
+                }
+            }
+
+            function handleGroupDragOver(e) {
+                const groups = [...notesList.querySelectorAll('.group:not(.dragging)')];
+                
+                let closestGroup = null;
+                let closestOffset = Number.NEGATIVE_INFINITY;
+                let isAfter = false;
+
+                groups.forEach(group => {
+                    const box = group.getBoundingClientRect();
+                    const offset = e.clientY - box.top - box.height / 2;
+                    
+                    if (offset < 0 && offset > closestOffset) {
+                        closestOffset = offset;
+                        closestGroup = group;
+                        isAfter = false;
+                    } else if (offset >= 0 && -offset > closestOffset) {
+                        closestOffset = -offset;
+                        closestGroup = group;
+                        isAfter = true;
+                    }
+                });
+
+                const indicator = document.createElement('div');
+                indicator.className = 'drop-indicator';
+
+                if (closestGroup) {
+                    if (isAfter) {
+                        closestGroup.parentNode.insertBefore(indicator, closestGroup.nextSibling);
+                    } else {
+                        closestGroup.parentNode.insertBefore(indicator, closestGroup);
+                    }
+                } else {
+                    notesList.appendChild(indicator);
+                }
+            }
+
+            function handleNoteDragOver(e) {
+                const draggedParentGroup = draggedItem.closest('.group');
+                
+                // Check if we're hovering over the main notes-tree area
+                const notesTree = document.getElementById('notes-tree');
+                const notesTreeRect = notesTree.getBoundingClientRect();
+                const isOverMainArea = e.clientY >= notesTreeRect.top && 
+                                      e.clientY <= notesTreeRect.bottom &&
+                                      !e.target.closest('.group');
+
+                // If hovering over main area, allow dropping as standalone note
+                if (isOverMainArea) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'drop-indicator';
+                    
+                    // Find the closest standalone note
+                    const standaloneNotes = [...notesTree.querySelectorAll('.tree-item:not(.dragging):not(.group-header):not(.group .tree-item)')];
+                    let closestNote = null;
+                    let closestOffset = Number.NEGATIVE_INFINITY;
+                    let isAfter = false;
+
+                    standaloneNotes.forEach(note => {
+                        const box = note.getBoundingClientRect();
+                        const offset = e.clientY - box.top - box.height / 2;
+                        
+                        if (offset < 0 && offset > closestOffset) {
+                            closestOffset = offset;
+                            closestNote = note;
+                            isAfter = false;
+                        } else if (offset >= 0 && -offset > closestOffset) {
+                            closestOffset = -offset;
+                            closestNote = note;
+                            isAfter = true;
+                        }
+                    });
+
+                    if (closestNote) {
+                        if (isAfter) {
+                            closestNote.parentNode.insertBefore(indicator, closestNote.nextSibling);
+                        } else {
+                            closestNote.parentNode.insertBefore(indicator, closestNote);
+                        }
+                    } else {
+                        // If no standalone notes, append to the end of the tree
+                        const lastGroup = notesTree.querySelector('.group:last-child');
+                        if (lastGroup) {
+                            notesTree.insertBefore(indicator, lastGroup.nextSibling);
+                        } else {
+                            notesTree.appendChild(indicator);
+                        }
+                    }
+                    return;
+                }
+
+                // Handle dropping into groups (existing logic)
+                const container = e.target.closest('.group');
+                if (!container) return;
+
+                const notes = [...container.querySelectorAll('.tree-item:not(.dragging):not(.group-header)')];
+                
+                let closestNote = null;
+                let closestOffset = Number.NEGATIVE_INFINITY;
+                let isAfter = false;
+
+                notes.forEach(note => {
+                    const box = note.getBoundingClientRect();
+                    const offset = e.clientY - box.top - box.height / 2;
+                    
+                    if (offset < 0 && offset > closestOffset) {
+                        closestOffset = offset;
+                        closestNote = note;
+                        isAfter = false;
+                    } else if (offset >= 0 && -offset > closestOffset) {
+                        closestOffset = -offset;
+                        closestNote = note;
+                        isAfter = true;
+                    }
+                });
+
+                const indicator = document.createElement('div');
+                indicator.className = 'drop-indicator';
+
+                if (closestNote) {
+                    if (isAfter) {
+                        closestNote.parentNode.insertBefore(indicator, closestNote.nextSibling);
+                    } else {
+                        closestNote.parentNode.insertBefore(indicator, closestNote);
+                    }
+                } else {
+                    container.appendChild(indicator);
+                }
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                const indicator = document.querySelector('.drop-indicator');
+                if (!indicator || !draggedItem) return;
+
+                if (draggedType === 'group') {
+                    handleGroupDrop(indicator);
+                } else if (draggedType === 'note') {
+                    handleNoteDrop(indicator);
+                }
+
+                // Update UI and save
+                updateNotesTree();
+                saveToLocalStorage();
+                saveToServer();
+
+                // Clean up
+                indicator.remove();
+            }
+
+            function handleGroupDrop(indicator) {
+                const draggedGroupId = parseInt(draggedItem.getAttribute('data-id'));
+                const draggedIndex = notes.findIndex(n => n.id === draggedGroupId);
+                
+                if (draggedIndex === -1) return;
+
+                let targetIndex;
+                const nextGroup = indicator.nextElementSibling;
+                const prevGroup = indicator.previousElementSibling;
+
+                if (nextGroup && nextGroup.classList.contains('group')) {
+                    targetIndex = notes.findIndex(n => n.id === parseInt(nextGroup.getAttribute('data-id')));
+                } else if (prevGroup && prevGroup.classList.contains('group')) {
+                    targetIndex = notes.findIndex(n => n.id === parseInt(prevGroup.getAttribute('data-id'))) + 1;
+                } else {
+                    targetIndex = notes.length;
+                }
+
+                const [movedGroup] = notes.splice(draggedIndex, 1);
+                notes.splice(targetIndex > draggedIndex ? targetIndex - 1 : targetIndex, 0, movedGroup);
+            }
+
+            function handleNoteDrop(indicator) {
+                const draggedNoteId = parseInt(draggedItem.getAttribute('data-id'));
+                const draggedParentGroup = draggedItem.closest('.group');
+                const targetParentGroup = indicator.closest('.group');
+                
+                // Find the source array (where the note is coming from)
+                let sourceArray = draggedParentGroup ? 
+                    notes.find(g => g.id === parseInt(draggedParentGroup.getAttribute('data-id'))).notes :
+                    notes;
+                
+                // Find the target array (where the note is going to)
+                let targetArray = targetParentGroup ?
+                    notes.find(g => g.id === parseInt(targetParentGroup.getAttribute('data-id'))).notes :
+                    notes;
+                
+                const draggedIndex = sourceArray.findIndex(n => n.id === draggedNoteId);
+                if (draggedIndex === -1) return;
+
+                // Remove note from source
+                const [movedNote] = sourceArray.splice(draggedIndex, 1);
+
+                // Find target index
+                let targetIndex;
+                const nextNote = indicator.nextElementSibling;
+                const prevNote = indicator.previousElementSibling;
+
+                if (nextNote && nextNote.classList.contains('tree-item')) {
+                    targetIndex = targetArray.findIndex(n => n.id === parseInt(nextNote.getAttribute('data-id')));
+                } else if (prevNote && prevNote.classList.contains('tree-item')) {
+                    targetIndex = targetArray.findIndex(n => n.id === parseInt(prevNote.getAttribute('data-id'))) + 1;
+                } else {
+                    targetIndex = targetArray.length;
+                }
+
+                // Insert note at target position
+                if (sourceArray === targetArray && targetIndex > draggedIndex) {
+                    targetIndex--;
+                }
+                targetArray.splice(targetIndex, 0, movedNote);
+
+                // Update note's group association
+                if (targetParentGroup) {
+                    movedNote.groupId = parseInt(targetParentGroup.getAttribute('data-id'));
+                } else {
+                    delete movedNote.groupId;
+                }
+
+                movedNote.lastModified = Date.now();
+            }
+
+            notesList.addEventListener('dragstart', handleDragStart);
+            notesList.addEventListener('dragend', handleDragEnd);
+            notesList.addEventListener('dragover', handleDragOver);
+            notesList.addEventListener('drop', handleDrop);
+        }
+
+        // Initialize the app
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadFromServer();
+            if (notes.length === 0) {
+                addNewGroup();
+                addNewNote(null);
+            } else {
+                updateNotesTree();
+                // Select first note
+                const firstNote = notes.find(n => n.type === 'note') || 
+                    (notes.find(g => g.type === 'group' && g.notes.length > 0)?.notes[0]);
+                if (firstNote) {
+                    selectNote(firstNote.id);
+                }
+            }
+            
+            initDragAndDrop(); // Initialize drag and drop functionality
+        });
+
+        // Event listener for "New Group" button
+        document.querySelector('.add-group-btn').addEventListener('click', () => {
+            addNewGroup();
+        });
+
+        // Event listener for "New Note" button
+        document.querySelector('.add-note-btn').addEventListener('click', () => {
+            addNewNote(null);  // null means it's a standalone note, not in any group
+        });
+    </script>
+</body>
+</html>
