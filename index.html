@@ -107,7 +107,7 @@
 
         /* Style for notes within groups */
         .sub-note.tree-item {
-            padding: 0.5rem 1rem; /* Reduced padding */
+            padding: 0.2rem 1rem; /* Reduced padding */
             margin: 0.3rem 0; /* Reduced margin */
             font-size: 0.9rem; /* Slightly smaller font */
             margin-left: 1.5rem; /* Indent from group */
@@ -493,7 +493,7 @@
         </div>
     </div>
     <script>
-        // Initialize Quill
+        // Initialize Quill with autolink module
         const quill = new Quill('#note-text', {
             theme: 'snow',
             modules: {
@@ -507,13 +507,51 @@
                     [{ 'color': [] }, { 'background': [] }],
                     ['link', 'image'],
                     ['clean']
-                ],
-                imageResize: {
-                    displaySize: true,
-                    modules: ['Resize', 'DisplaySize']
-                }
+                ]
             },
             placeholder: 'Write your note here...'
+        });
+
+        // Add real-time URL detection
+        quill.on('text-change', function(delta, oldDelta, source) {
+            if (source === 'user') {
+                const text = quill.getText();
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                let match;
+                
+                while ((match = urlRegex.exec(text)) !== null) {
+                    const url = match[0];
+                    const index = match.index;
+                    
+                    // Check if this URL is already a link
+                    const format = quill.getFormat(index, url.length);
+                    if (!format.link) {
+                        // If it's not already a link, make it one
+                        quill.formatText(index, url.length, 'link', url, 'api');
+                    }
+                }
+            }
+        });
+
+        // Add paste handler for pasted content
+        quill.clipboard.addMatcher('text', (node, delta) => {
+            const text = node.data;
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            let matches;
+            let lastIndex = 0;
+            const newDelta = new Delta();
+
+            while ((matches = urlRegex.exec(text)) !== null) {
+                if (matches.index > lastIndex) {
+                    newDelta.insert(text.slice(lastIndex, matches.index));
+                }
+                newDelta.insert(matches[0], { link: matches[0] });
+                lastIndex = matches.index + matches[0].length;
+            }
+            if (lastIndex < text.length) {
+                newDelta.insert(text.slice(lastIndex));
+            }
+            return newDelta;
         });
 
         // Add image handler to make images resizable
