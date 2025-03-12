@@ -1,0 +1,99 @@
+[
+  {
+    "id": 1741181672236,
+    "type": "note",
+    "title": "Storage ",
+    "content": "<p><strong>3. </strong><strong style=\"background-color: rgb(255, 153, 0);\">Verify </strong><strong style=\"color: rgb(230, 0, 0);\">Storage </strong><strong>Driver Settings:</strong></p><p>Incompatibilities with storage drivers can cause Docker to fail during startup. Check your storage driver settings in Docker's configuration file:​</p><pre class=\"ql-syntax\" spellcheck=\"false\">bashhttps://www.youtube.com/results?search_query=%D8%A7%D9%84%D8%B4%D9%8A%D8%AE+%D9%87%D8%A7%D8%AF%D9%8A+%D8%A7%D9%84%D9%85%D8%AF%D8%B1%D8%B3%D9%8A+%D8%A7%D9%84%D8%B2%D9%88%D8%A7%D8%AC\nCopy\n\nhttps://www.youtube.com/results?search_query=%D8%A7%D9%84%D8%B4%D9%8A%D8%AE+%D9%87%D8%A7%D8%AF%D9%8A+%D8%A7%D9%84%D9%85%D8%AF%D8%B1%D8%B3%D9%8A+%D8%A7%D9%84%D8%B2%D9%88%D8%A7%D8%AC\n\ncat /etc/docker/daemon.json\n</pre><p>If the file doesn't exist or is empty, consider creating or modifying it to specify a compatible storage</p><p>docker context create remote-docker --docker \"host=ssh://klipper@192.168.8.134\"</p><p><a href=\"https://chat.qwen.ai/c/7dc27e99-4a18-44b1-b08b-53701e63325e\" target=\"_blank\">https://chat.qwen.ai/c/7dc27e99-4a18-44b1-b08b-53701e63325e</a></p><p><br></p><p><a href=\"https://chat.qwen.ai/c/7dc27e99-4a18-44b1-b08b-53701e63325e\" target=\"_blank\">https://chat.qwen.ai/c/7dc27e99-4a18-44b1-b08b-53701e63325e</a></p><p><br></p><p><a href=\"https://www.youtube.com/watch?v=n60ah4x_ikA\" target=\"_blank\">https://www.youtube.com/watch?v=n60ah4x_ikA</a></p><p><a href=\"https://www.youtube.com/watch?v=n60ah4x_ikA\" target=\"_blank\">اهمية الزواج المبكر 1429 - YouTube</a></p><p><br></p><p><a href=\"https://www.youtube.com/watch?v=n60ah4x_ikA\" target=\"_blank\">https://www.youtube.com/watch?v=n60ah4x_ikA</a></p><p><a href=\"https://www.youtube.com/watch?v=n60ah4x_ikA\" target=\"_blank\">https://www.youtube.com/watch?v=n60ah4x_ikA</a></p><p>sudo systemctl restart docker</p><p>5. Ensure Kernel Compatibility:</p><p><br></p><p>Verify that your Proxmox LXC container's kernel supports Docker's requirements. Docker requires specific kernel features, and using an unsupported kernel can lead to startup failures. Consider updating your kernel or adjusting your container's configuration to ensure compatibility.​</p><p><br></p><p>6. Review System Resources:</p><p><br></p><p>Insufficient system resources, such as memory or CPU, can cause Docker to fail to start. Check your system's resource usage:​</p><p><br></p><p>bash</p><p>Copy</p><p>free -h</p><p>top</p><p>If resources are constrained, consider allocating more resources to your LXC container or optimizing existing workloads.​</p><p><br></p><p>7. Reinstall Docker:</p><p><br></p><p>If the issue persists, consider reinstalling Docker to ensure all components are correctly installed:​</p><p><br></p><p>bash</p><p>Copy</p><p>sudo apt-get remove --purge docker.io</p><p>sudo apt-get install docker.io</p><p>After reinstallation, start the Docker service:​</p><p>cat /etc/docker/daemon.json</p><p>If the file doesn't exist or is empty, consider creating or modifying it to specify a compatible storage driver, such as overlay2:​</p><p>CSDN Blog</p><p><br></p><p>json</p><p>Copy</p><p>{</p><p>&nbsp;\"storage-driver\": \"overlay2\"</p><p>}</p><p>After making changes, restart Docker:</p><p>bash</p><p>Copy</p><p>sudo systemctl start docker</p><p>8. Consult Docker Documentation and Community Forums:</p><p><br></p><p>If you've tried all the above steps without success, refer to the official Docker documentation for further guidance. Additionally, engaging with the Docker Community Forums can provide insights from other users who may have encountered similar issues.​</p><p><br></p><p>By systematically following these steps, you should be able to identify and resolve the issue preventing Docker from starting on your Proxmox LXC container.</p>",
+    "created": 1741181672236,
+    "lastModified": 1741792202489
+  },
+  {
+    "id": 1741731573089,
+    "type": "group",
+    "title": "lm",
+    "color": "#4a148c",
+    "notes": [
+      {
+        "id": 1741731887952,
+        "type": "note",
+        "title": "Note 4",
+        "content": "<p><br></p>",
+        "created": 1741731887952,
+        "lastModified": 1741790341752,
+        "groupId": 1741731573089
+      },
+      {
+        "id": 1741193238193,
+        "type": "note",
+        "title": "Note 1",
+        "content": "<p><br></p>",
+        "groupId": 1741731573089,
+        "created": 1741193238193,
+        "lastModified": 1741790295171
+      }
+    ],
+    "created": 1741731573089,
+    "lastModified": 1741731887952
+  },
+  {
+    "id": 1741785310543,
+    "type": "note",
+    "title": "o;o;",
+    "content": "<p><br></p>",
+    "created": 1741785310543,
+    "lastModified": 1741785657589
+  },
+  {
+    "id": 1741731238440,
+    "type": "note",
+    "title": "Note 2",
+    "content": "<p>لىؤرلى</p>",
+    "created": 1741731238440,
+    "lastModified": 1741790320116
+  },
+  {
+    "id": 1741733174370,
+    "type": "group",
+    "title": "Group 1",
+    "color": "#1a237e",
+    "notes": [],
+    "created": 1741733174370,
+    "lastModified": 1741733174370
+  },
+  {
+    "id": 1741789926747,
+    "type": "note",
+    "title": "Note 5",
+    "content": "<p><a href=\"https://www.youtube.com/\" target=\"_blank\">https://www.youtube.com/</a></p><p><br></p><p><a class=\"markdown-active-link svelte-k2e49v\" href=\"https://www.youtube.com/\" style=\"color: var(--vscode-textLink-activeForeground); text-decoration-color: var(--ds-color-accent-a11); outline: -webkit-focus-ring-color solid 1px; outline-offset: -1px; cursor: pointer; user-select: all; font-family: &quot;Segoe WPC&quot;, &quot;Segoe UI&quot;, sans-serif; font-size: 13px; white-space-collapse: preserve-breaks; background-color: rgb(24, 24, 24);\"><span class=\"markdown-base-link svelte-k2e49v\" style=\"color: var(--ds-color-accent-a11); word-break: break-all; display: inline;\">https://www.youtube.com/</span></a></p><p><br></p><p><a href=\"https://www.youtube.com/watch?v=n60ah4x_ikA\" target=\"_blank\">https://www.youtube.com/watch?v=n60ah4x_ikA</a></p><p><a href=\"https://www.youtube.com/watch?v=n60ah4x_ikA\">اهمية الزواج المبكر 1429 - YouTube</a></p><p><br></p><p><a href=\"https://www.youtube.com/watch?v=n60ah4x_ikA\" target=\"_blank\">https://www.youtube.com/watch?v=n60ah4x_ikA</a></p><p><a href=\"https://www.youtube.com/watch?v=n60ah4x_ikA\" target=\"_blank\">https://www.youtube.com/watch?v=n60ah4x_ikA</a></p><p><br></p><p><a href=\"https://www.youtube.com/watch?v=n60ah4x_ikA\" target=\"_blank\">https://www.youtube.com/watch?v=n60ah4x_ikA</a></p><p><br></p><p><br></p><p><a href=\"https://www.youtube.com/watch?v=BYrNDX_zzxI\" target=\"_blank\">https://www.youtube.com/watch?v=BYrNDX_zzxI</a></p><p><br></p><p>rggrsg</p>",
+    "groupId": null,
+    "created": 1741789926747,
+    "lastModified": 1741790204116
+  },
+  {
+    "id": 1741790346456,
+    "type": "note",
+    "title": "Note 6",
+    "content": "",
+    "groupId": null,
+    "created": 1741790346456,
+    "lastModified": 1741790346456
+  },
+  {
+    "id": 1741790346910,
+    "type": "note",
+    "title": "Note 7",
+    "content": "",
+    "groupId": null,
+    "created": 1741790346910,
+    "lastModified": 1741790346910
+  },
+  {
+    "id": 1741790347369,
+    "type": "note",
+    "title": "Note 8",
+    "content": "<p><br></p>",
+    "groupId": null,
+    "created": 1741790347369,
+    "lastModified": 1741791793683
+  }
+]

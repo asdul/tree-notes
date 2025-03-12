@@ -485,7 +485,7 @@
                 </button>
             </div>
             <div id="notes-tree"></div>
-            <div class="version-info">v1.1.1</div>
+            <div class="version-info">v1.1.2</div>
         </div>
         <div class="note-content">
             <input type="text" id="note-title" placeholder="Note Title">
@@ -1297,8 +1297,15 @@
         window.addEventListener('DOMContentLoaded', async () => {
             await loadFromServer();
             if (notes.length === 0) {
-                addNewGroup();
+                // Create standalone note first
                 addNewNote(null);
+                // Then create a group
+                //addNewGroup();
+                // Select the standalone note
+                const firstNote = notes.find(n => n.type === 'note');
+                if (firstNote) {
+                    selectNote(firstNote.id);
+                }
             } else {
                 updateNotesTree();
                 // Select first note
@@ -1309,7 +1316,7 @@
                 }
             }
             
-            initDragAndDrop(); // Initialize drag and drop functionality
+            initDragAndDrop();
         });
 
         // Event listener for "New Group" button
