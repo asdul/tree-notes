@@ -1,20 +1,11 @@
 [
   {
-    "id": 1741792325444,
+    "id": 1741796359467,
     "type": "note",
     "title": "Note 1",
-    "content": "<p>grs</p>",
+    "content": "<p><br></p>",
     "groupId": null,
-    "created": 1741792325444,
-    "lastModified": 1741796042497
-  },
-  {
-    "id": 1741792325444,
-    "type": "group",
-    "title": "55",
-    "color": "#4a148c",
-    "notes": [],
-    "created": 1741792325444,
-    "lastModified": 1741792419580
+    "created": 1741796359467,
+    "lastModified": 1741796389466
   }
 ]
