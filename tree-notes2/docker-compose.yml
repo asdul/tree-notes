@@ -1,0 +1,11 @@
+version: '3'
+services:
+  tree-notes:
+    image: aabsb1010/tree-notes:1.1.4
+    ports:
+      - "3011:3011"
+    volumes:
+      - ./data:/usr/src/app/data
+    restart: unless-stopped
+
+
