@@ -43,13 +43,42 @@
         }
 
         .tree-view {
+            
+            position: relative;
             width: 300px;
             background-color: var(--bg-secondary);
-            padding: 1.5rem;
+            padding: 0.6rem;
+            padding-bottom: 1.8rem;
             border-right: 1px solid var(--border-color);
-            overflow-y: auto;
             box-shadow: var(--shadow-md);
             height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* New styles for buttons container */
+        .buttons-container {
+            border-bottom-style: solid;
+            border-color:#363636;
+            position: sticky;
+            top: 0;
+            background-color: var(--bg-secondary);
+            padding-bottom: 0.2rem;
+            z-index: 1;
+            width: 100%; /* Ensure it takes full width */
+        }
+
+        /* Modify notes-tree container */
+        #notes-tree {
+            
+            border-bottom-style: solid;
+            border-color:#363636;
+            overflow-y: auto;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            flex: 1;
+            padding-right: 1.5rem;
+            width: 100%; /* Ensure it takes full width */
         }
 
         .note-content {
@@ -70,8 +99,35 @@
             border-radius: 0.5rem;
             transition: all 0.2s ease;
             font-size: 0.95rem;
-            width: 100%;
+            width: calc(100% - 10px); /* Adjust width to account for padding */
+            min-width: 0; /* Prevent content from forcing width */
+            box-sizing: border-box;
             position: relative;
+        }
+
+        /* Style for notes within groups */
+        .sub-note.tree-item {
+            padding: 0.2rem 1rem; /* Reduced padding */
+            margin: 0.3rem 0; /* Reduced margin */
+            font-size: 0.9rem; /* Slightly smaller font */
+            margin-left: 1.5rem; /* Indent from group */
+            opacity: 0.9;
+        }
+
+        /* Optional: Add a subtle left border to show hierarchy */
+        .sub-note.tree-item {
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        /* Maintain hover and active states */
+        .sub-note.tree-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .sub-note.tree-item.active {
+            background-color: var(--hover-color);
+            border-left: 3px solid var(--accent-blue);
         }
 
         .tree-item.dragging {
@@ -101,6 +157,8 @@
             user-select: none;
             margin-bottom: 1.5rem;
             transition: transform 0.2s ease;
+            width: 100%;
+            min-width: 0; /* Prevent content from forcing width */
         }
 
         .group.dragging {
@@ -395,36 +453,236 @@
             border-radius: 2px;
             transition: all 0.2s ease;
         }
+        .version-footer {
+            position: absolute;
+            bottom: 5px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .version-info {
+            position: static;
+            margin: 0;
+        }
+
+        .import-export-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .icon-button:hover {
+            opacity: 1;
+        }
     </style>
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
 </head>
 <body>
+    
     <div class="container">
         <div class="tree-view">
-            <button class="button add-group-btn">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
-                New Group
-            </button>
-            <button class="button add-note-btn">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                </svg>
-                New Note
-            </button>
+            <div class="buttons-container">
+                <button class="button add-note-btn">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    New Note
+                </button>
+                <button class="button add-group-btn">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    New Group
+                </button>
+            </div>
             <div id="notes-tree"></div>
+            <div class="version-footer">
+                <div class="version-info">v1.1.4</div>
+                <div class="import-export-buttons">
+                    <button class="icon-button" id="exportBtn" title="Export Notes">📤</button>
+                    <input type="file" id="importInput" accept=".json" style="display: none;">
+                    <button class="icon-button" id="importBtn" title="Import Notes">📥</button>
+                </div>
+            </div>
         </div>
         <div class="note-content">
             <input type="text" id="note-title" placeholder="Note Title">
             <div id="note-text"></div>
         </div>
     </div>
-
     <script>
-        // Initialize Quill
+        // Global variables
+        let ws;
+        let notes = [];
+        let currentNoteId = null;
+        let isConnected = false;
+        let pendingChanges = [];
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+        const RECONNECT_DELAY = 1000;
+
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+            ws.onopen = () => {
+                console.log('Connected to server');
+                isConnected = true;
+                reconnectAttempts = 0;
+
+                // Send any pending changes
+                while (pendingChanges.length > 0) {
+                    sendUpdate(pendingChanges.shift());
+                }
+            };
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                
+                if (message.type === 'full_sync') {
+                    notes = message.data.notes || [];
+                    updateNotesTree();
+                    
+                    // Select first note if none selected
+                    if (!currentNoteId && notes.length > 0) {
+                        const firstNote = findFirstNote();
+                        if (firstNote) {
+                            selectNote(firstNote.id);
+                        }
+                    } else if (currentNoteId) {
+                        selectNote(currentNoteId);
+                    }
+                } else if (message.type === 'update') {
+                    handleRemoteUpdate(message.data);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('Disconnected from server');
+                isConnected = false;
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    reconnectAttempts++;
+                    setTimeout(initWebSocket, RECONNECT_DELAY * reconnectAttempts);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function findFirstNote() {
+            // First try to find a standalone note
+            let firstNote = notes.find(n => n.type === 'note');
+            
+            // If no standalone note, look in groups
+            if (!firstNote) {
+                for (const group of notes) {
+                    if (group.type === 'group' && group.notes && group.notes.length > 0) {
+                        firstNote = group.notes[0];
+                        break;
+                    }
+                }
+            }
+            
+            return firstNote;
+        }
+
+        function handleRemoteUpdate(data) {
+            if (!Array.isArray(data.notes)) {
+                console.error('Invalid notes format received:', data);
+                return;
+            }
+
+            const currentNote = getCurrentNote();
+            const currentContent = currentNote ? {
+                title: document.getElementById('note-title').value,
+                content: quill.root.innerHTML
+            } : null;
+
+            notes = data.notes;
+            updateNotesTree();
+
+            if (currentNoteId) {
+                const updatedCurrentNote = findNoteById(currentNoteId);
+                if (updatedCurrentNote && currentContent) {
+                    // Preserve local changes if they exist
+                    if (currentContent.title !== updatedCurrentNote.title ||
+                        currentContent.content !== updatedCurrentNote.content) {
+                        updatedCurrentNote.title = currentContent.title;
+                        updatedCurrentNote.content = currentContent.content;
+                        sendUpdate(notes);
+                    }
+                }
+                selectNote(currentNoteId);
+            }
+        }
+
+        function sendUpdate(data) {
+            if (!Array.isArray(data)) {
+                console.error('Invalid notes format:', data);
+                return;
+            }
+
+            if (!isConnected) {
+                pendingChanges.push(data);
+                return;
+            }
+
+            try {
+                // Send via WebSocket
+                ws.send(JSON.stringify({
+                    type: 'update',
+                    data: { notes: data }
+                }));
+
+                // Also send via REST API as backup
+                fetch('/api/notes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes: data })
+                }).catch(error => console.error('Error saving to REST API:', error));
+            } catch (error) {
+                console.error('Error sending update:', error);
+                pendingChanges.push(data);
+            }
+        }
+
+        function getCurrentNote() {
+            if (!currentNoteId) return null;
+            return findNoteById(currentNoteId);
+        }
+
+        function findNoteById(id) {
+            let found = notes.find(n => n.id === id);
+            if (!found) {
+                for (const group of notes.filter(n => n.type === 'group')) {
+                    found = group.notes.find(n => n.id === id);
+                    if (found) break;
+                }
+            }
+            return found;
+        }
+
+        // Initialize Quill with autolink module
         const quill = new Quill('#note-text', {
             theme: 'snow',
             modules: {
@@ -438,13 +696,51 @@
                     [{ 'color': [] }, { 'background': [] }],
                     ['link', 'image'],
                     ['clean']
-                ],
-                imageResize: {
-                    displaySize: true,
-                    modules: ['Resize', 'DisplaySize']
-                }
+                ]
             },
             placeholder: 'Write your note here...'
+        });
+
+        // Add real-time URL detection
+        quill.on('text-change', function(delta, oldDelta, source) {
+            if (source === 'user') {
+                const text = quill.getText();
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                let match;
+                
+                while ((match = urlRegex.exec(text)) !== null) {
+                    const url = match[0];
+                    const index = match.index;
+                    
+                    // Check if this URL is already a link
+                    const format = quill.getFormat(index, url.length);
+                    if (!format.link) {
+                        // If it's not already a link, make it one
+                        quill.formatText(index, url.length, 'link', url, 'api');
+                    }
+                }
+            }
+        });
+
+        // Add paste handler for pasted content
+        quill.clipboard.addMatcher('text', (node, delta) => {
+            const text = node.data;
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            let matches;
+            let lastIndex = 0;
+            const newDelta = new Delta();
+
+            while ((matches = urlRegex.exec(text)) !== null) {
+                if (matches.index > lastIndex) {
+                    newDelta.insert(text.slice(lastIndex, matches.index));
+                }
+                newDelta.insert(matches[0], { link: matches[0] });
+                lastIndex = matches.index + matches[0].length;
+            }
+            if (lastIndex < text.length) {
+                newDelta.insert(text.slice(lastIndex));
+            }
+            return newDelta;
         });
 
         // Add image handler to make images resizable
@@ -467,13 +763,10 @@
             };
         });
 
-        let notes = JSON.parse(localStorage.getItem('notes') || '[]');
-        let currentNoteId = null;
         const groupColors = [
             '#4a148c', '#1a237e', '#0d47a1', '#004d40',
             '#1b5e20', '#b71c1c', '#4a148c', '#311b92'
         ];
-        let colorIndex = parseInt(localStorage.getItem('colorIndex') || '0');
 
         function getNewGroupTitle() {
             const existingGroups = notes.filter(item => item.type === 'group');
@@ -517,15 +810,15 @@
                 id: Date.now(),
                 type: 'group',
                 title: getNewGroupTitle(),
-                color: groupColors[colorIndex % groupColors.length],
+                color: groupColors[Math.floor(Math.random() * groupColors.length)],
                 notes: [],
                 created: Date.now(),
                 lastModified: Date.now()
             };
-            colorIndex++;
+            
             notes.push(group);
             updateNotesTree();
-            saveToLocalStorage();
+            sendUpdate(notes);
         }
 
         function addNewNote(groupId) {
@@ -550,7 +843,7 @@
             }
             
             updateNotesTree();
-            saveToLocalStorage();
+            sendUpdate(notes);
             selectNote(note.id);
         }
 
@@ -590,7 +883,7 @@
                             item.title = newTitle.trim();
                             item.lastModified = Date.now();
                             updateNotesTree();
-                            saveToServer();
+                            sendUpdate(notes);
                         }
                     };
 
@@ -785,26 +1078,19 @@
             }
         }
 
+        // Debounced save function
+        const debouncedSave = debounce(saveCurrentNote, 500);
+
         function saveCurrentNote() {
             if (!currentNoteId) return;
             
-            let note = notes.find(n => n.type === 'note' && n.id === currentNoteId);
-            
-            if (!note) {
-                notes.forEach(group => {
-                    if (group.type === 'group') {
-                        const foundNote = group.notes.find(n => n.id === currentNoteId);
-                        if (foundNote) note = foundNote;
-                    }
-                });
-            }
-            
+            const note = getCurrentNote();
             if (note) {
                 note.title = document.getElementById('note-title').value;
                 note.content = quill.root.innerHTML;
-                note.lastModified = Date.now(); // Add timestamp
+                note.lastModified = Date.now();
                 updateNotesTree();
-                saveToLocalStorage();
+                sendUpdate(notes);
             }
         }
 
@@ -830,7 +1116,7 @@
                 }
                 
                 updateNotesTree();
-                saveToLocalStorage();
+                sendUpdate(notes);
             }
         }
 
@@ -849,14 +1135,8 @@
                 
                 notes = notes.filter(item => item.id !== groupId);
                 updateNotesTree();
-                saveToLocalStorage();
+                sendUpdate(notes);
             }
-        }
-
-        function saveToLocalStorage() {
-            localStorage.setItem('notes', JSON.stringify(notes));
-            localStorage.setItem('colorIndex', colorIndex.toString());
-            saveToServer();
         }
 
         function formatLastModified(timestamp) {
@@ -865,14 +1145,14 @@
         }
 
         // Add event listeners for auto-saving
-        document.getElementById('note-title').addEventListener('input', saveCurrentNote);
-        quill.on('text-change', saveCurrentNote);
+        document.getElementById('note-title').addEventListener('input', debouncedSave);
+        quill.on('text-change', debouncedSave);
 
         // Add auto-save interval (save every 30 seconds)
-        setInterval(saveCurrentNote, 30000);
+        setInterval(debouncedSave, 30000);
 
         // Add event listener for beforeunload to save before closing
-        window.addEventListener('beforeunload', saveCurrentNote);
+        window.addEventListener('beforeunload', debouncedSave);
 
         // Add new function to save to server
         async function saveToServer() {
@@ -882,11 +1162,19 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(notes)
+                    body: JSON.stringify({
+                        notes: notes,
+                        version: currentVersion + 1,
+                        timestamp: Date.now()
+                    })
                 });
                 
-                if (!response.ok) {
-                    console.error('Failed to save to server:', await response.text());
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        currentVersion = data.version;
+                        lastSyncTime = Date.now();
+                    }
                 }
             } catch (err) {
                 console.error('Error saving to server:', err);
@@ -898,15 +1186,44 @@
             try {
                 const response = await fetch('/api/notes');
                 if (response.ok) {
-                    const serverNotes = await response.json();
-                    if (serverNotes && serverNotes.length > 0) {
-                        notes = serverNotes;
+                    const serverData = await response.json();
+                    if (serverData.version > currentVersion) {
+                        notes = serverData.notes;
+                        currentVersion = serverData.version;
                         updateNotesTree();
+                        
+                        // Update current note if it exists
+                        if (currentNoteId) {
+                            selectNote(currentNoteId);
+                        }
                     }
                 }
             } catch (err) {
                 console.error('Error loading from server:', err);
             }
+        }
+
+        // Add periodic sync function
+        function startSync() {
+            setInterval(async () => {
+                const response = await fetch('/api/notes');
+                if (response.ok) {
+                    const serverData = await response.json();
+                    if (serverData.version > currentVersion) {
+                        // Server has newer data
+                        if (lastSyncTime < serverData.timestamp) {
+                            notes = serverData.notes;
+                            currentVersion = serverData.version;
+                            updateNotesTree();
+                            
+                            // Update current note if it exists
+                            if (currentNoteId) {
+                                selectNote(currentNoteId);
+                            }
+                        }
+                    }
+                }
+            }, SYNC_INTERVAL);
         }
 
         // Add these functions for drag and drop functionality
@@ -1186,34 +1503,123 @@
             notesList.addEventListener('drop', handleDrop);
         }
 
+        function exportNotes() {
+            const notesData = JSON.stringify(notes, null, 2);
+            const blob = new Blob([notesData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tree-notes-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importNotes(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedNotes = JSON.parse(e.target.result);
+                    if (Array.isArray(importedNotes)) {
+                        notes = importedNotes;
+                        updateNotesTree();
+                        sendUpdate(notes);
+                        
+                        // Select first note if available
+                        if (notes.length > 0) {
+                            const firstNote = findFirstNote();
+                            if (firstNote) {
+                                selectNote(firstNote.id);
+                            }
+                        }
+                    } else {
+                        alert('Invalid notes format');
+                    }
+                } catch (error) {
+                    console.error('Error importing notes:', error);
+                    alert('Error importing notes file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
         // Initialize the app
         window.addEventListener('DOMContentLoaded', async () => {
-            await loadFromServer();
-            if (notes.length === 0) {
-                addNewGroup();
-                addNewNote(null);
-            } else {
-                updateNotesTree();
-                // Select first note
-                const firstNote = notes.find(n => n.type === 'note') || 
-                    (notes.find(g => g.type === 'group' && g.notes.length > 0)?.notes[0]);
-                if (firstNote) {
-                    selectNote(firstNote.id);
+            try {
+                // First try to load notes from server using REST API
+                const response = await fetch('/api/notes');
+                if (response.ok) {
+                    const data = await response.json();
+                    notes = data.notes || [];
+                    updateNotesTree();
+                    
+                    // Select first note if available
+                    if (notes.length > 0) {
+                        const firstNote = findFirstNote();
+                        if (firstNote) {
+                            selectNote(firstNote.id);
+                        }
+                    }
                 }
+            } catch (error) {
+                console.error('Error loading initial notes:', error);
             }
+
+            // Initialize WebSocket connection
+            initWebSocket();
             
-            initDragAndDrop(); // Initialize drag and drop functionality
+            // Initialize drag and drop
+            initDragAndDrop();
+
+            // Add event listeners
+            document.querySelector('.add-note-btn').addEventListener('click', () => {
+                addNewNote(null);
+            });
+
+            document.querySelector('.add-group-btn').addEventListener('click', () => {
+                addNewGroup();
+            });
+
+            // Add auto-save handlers
+            document.getElementById('note-title').addEventListener('input', debouncedSave);
+            quill.on('text-change', debouncedSave);
+
+            // Add export/import handlers
+            document.getElementById('exportBtn').addEventListener('click', exportNotes);
+            
+            document.getElementById('importBtn').addEventListener('click', () => {
+                document.getElementById('importInput').click();
+            });
+            
+            document.getElementById('importInput').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    if (confirm('Importing notes will replace all existing notes. Continue?')) {
+                        importNotes(e.target.files[0]);
+                    }
+                    e.target.value = ''; // Reset file input
+                }
+            });
         });
 
-        // Event listener for "New Group" button
-        document.querySelector('.add-group-btn').addEventListener('click', () => {
-            addNewGroup();
-        });
+        // Event listener for "New Group" button - DELETE THIS
+        // document.querySelector('.add-group-btn').addEventListener('click', () => {
+        //     addNewGroup();
+        // });
 
-        // Event listener for "New Note" button
-        document.querySelector('.add-note-btn').addEventListener('click', () => {
-            addNewNote(null);  // null means it's a standalone note, not in any group
-        });
+        // Event listener for "New Note" button - DELETE THIS
+        // document.querySelector('.add-note-btn').addEventListener('click', () => {
+        //     addNewNote(null);  // null means it's a standalone note, not in any group
+        // });
+
+        // Helper function for debouncing
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
     </script>
 </body>
 </html>
