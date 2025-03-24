@@ -9,8 +9,10 @@ WORKDIR /usr/src/app
 # Copy package files
 COPY package*.json ./
 
-# Update version in package.json
-RUN npm version ${VERSION} --no-git-tag-version
+# Update version in package.json (only if different)
+RUN if [ "$(node -p "require('./package.json').version")" != "${VERSION}" ]; then \
+    npm version ${VERSION} --no-git-tag-version; \
+    fi
 
 # Install dependencies
 RUN npm install
